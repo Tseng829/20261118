@@ -1,0 +1,2795 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nicole寵物小島 | 2000年前的沉浸式秘境物語</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts: Zen Maru Gothic & Nunito & Shippori Mincho 營造繪本詩意 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Shippori+Mincho:wght@600;800&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 圖示 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 引入 Tone.js 製作療癒互動音效 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- 引入 Three.js 製作全螢幕 3D 繪本箱庭世界 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        :root {
+            --bg-cream: #FFFDF7;
+            --pastel-pink: #FFB7B2;
+            --pastel-mint: #B5EAD7;
+            --pastel-lavender: #C7CEEA;
+            --text-brown: #5C4B51;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* 完全取消傳統網頁捲軸，實現 Wayfinder 全螢幕沉浸視窗 */
+            font-family: 'Zen Maru Gothic', 'Nunito', sans-serif;
+            color: var(--text-brown);
+            background: linear-gradient(180deg, #CFEFFF 0%, #FFE6F0 55%, #FFF4D9 100%);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .serif-title {
+            font-family: 'Shippori Mincho', 'Zen Maru Gothic', serif;
+        }
+
+        /* 繪本毛玻璃擬態質感 */
+        .storybook-glass {
+            background: rgba(255, 253, 247, 0.84);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1.5px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 8px 24px rgba(92, 75, 81, 0.08);
+        }
+
+        /* 全螢幕 3D 舞台 */
+        #fullscreen-stage {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+            touch-action: none;
+            cursor: grab;
+        }
+
+        #fullscreen-stage:active {
+            cursor: grabbing;
+        }
+
+        #fullscreen-stage.cursor-pointer-pet {
+            cursor: pointer;
+        }
+
+        #fullscreen-stage.cursor-grabbing-pet {
+            cursor: grabbing;
+        }
+
+        /* Wayfinder 風格開場迷霧雲層過場 */
+        #intro-curtain {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, rgba(255, 253, 247, 0.45) 0%, rgba(255, 232, 242, 0.72) 60%, rgba(212, 238, 255, 0.85) 100%);
+            backdrop-filter: blur(5px);
+            transition: opacity 1.3s cubic-bezier(0.22, 1, 0.36, 1), visibility 1.3s;
+            overflow: hidden;
+        }
+
+        #intro-curtain.curtain-hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* Wayfinder 飄浮前景雲霧視差層 */
+        .mist-layer {
+            position: absolute;
+            border-radius: 9999px;
+            filter: blur(42px);
+            pointer-events: none;
+            transition: transform 0.25s ease-out, opacity 0.4s ease-out;
+        }
+
+        /* 滾輪敘事微光滾輪指示器 */
+        .scroll-mouse-wheel {
+            animation: wheelBounce 1.8s ease-in-out infinite;
+        }
+        @keyframes wheelBounce {
+            0%, 100% { transform: translateY(0); opacity: 0.9; }
+            65% { transform: translateY(9px); opacity: 0.2; }
+        }
+
+        /* Wayfinder 詩意無框文字光暈 */
+        .wayfinder-poetic-text {
+            text-shadow: 0 2px 18px rgba(255, 255, 255, 0.98), 0 0 36px rgba(255, 240, 245, 0.9);
+            transition: opacity 0.35s ease, transform 0.35s ease;
+        }
+
+        #intro-curtain.curtain-hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* 滾輪敘事進度條與微光指示器 */
+        .scroll-mouse-wheel {
+            animation: wheelBounce 1.6s ease-in-out infinite;
+        }
+        @keyframes wheelBounce {
+            0%, 100% { transform: translateY(0); opacity: 1; }
+            60% { transform: translateY(8px); opacity: 0.35; }
+        }
+
+        #intro-curtain.curtain-hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* 氣泡立體互動按鈕 */
+        .bubble-btn {
+            background: linear-gradient(135deg, #FF9AA2 0%, #FFB7B2 100%);
+            color: white;
+            border: 2.5px solid #FFF;
+            box-shadow: 0 5px 0 #E0828A, 0 10px 20px rgba(224, 130, 138, 0.28);
+            transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .bubble-btn:hover { transform: translateY(-2px) scale(1.03); filter: brightness(1.04); }
+        .bubble-btn:active { transform: translateY(3px) scale(0.98); box-shadow: 0 2px 0 #E0828A; }
+
+        .bubble-btn-mint {
+            background: linear-gradient(135deg, #88D8B0 0%, #B5EAD7 100%);
+            color: #2F5D46;
+            border: 2.5px solid #FFF;
+            box-shadow: 0 5px 0 #6BB892, 0 10px 20px rgba(107, 184, 146, 0.25);
+            transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .bubble-btn-mint:hover { transform: translateY(-2px) scale(1.03); }
+        .bubble-btn-mint:active { transform: translateY(3px); box-shadow: 0 2px 0 #6BB892; }
+
+        .bubble-btn-lavender {
+            background: linear-gradient(135deg, #B5B9FF 0%, #C7CEEA 100%);
+            color: #3F4373;
+            border: 2.5px solid #FFF;
+            box-shadow: 0 5px 0 #9499D6, 0 10px 20px rgba(148, 153, 214, 0.25);
+            transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .bubble-btn-lavender:hover { transform: translateY(-2px) scale(1.03); }
+        .bubble-btn-lavender:active { transform: translateY(3px); box-shadow: 0 2px 0 #9499D6; }
+
+        /* 漂浮動畫 */
+        @keyframes floatGentle {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .animate-float-gentle {
+            animation: floatGentle 4s ease-in-out infinite;
+        }
+
+        /* 3D 空間漂浮愛心/星光特效 */
+        .floating-3d-fx {
+            position: fixed;
+            pointer-events: none;
+            font-size: 24px;
+            font-weight: 900;
+            animation: floatUpFade 1.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            z-index: 30;
+            text-shadow: 0 2px 8px rgba(255,255,255,0.95);
+        }
+
+        @keyframes floatUpFade {
+            0% { opacity: 1; transform: translate(-50%, 0) scale(0.6); }
+            50% { opacity: 1; transform: translate(-50%, -40px) scale(1.25); }
+            100% { opacity: 0; transform: translate(-50%, -80px) scale(0.95); }
+        }
+
+        /* 故事字幕淡入動畫 */
+        @keyframes subtitleReveal {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .subtitle-enter {
+            animation: subtitleReveal 0.65s ease-out forwards;
+        }
+
+        /* 泡泡沐浴動畫 */
+        @keyframes bubbleRise {
+            0% { transform: translateY(0) scale(0.6); opacity: 0.9; }
+            100% { transform: translateY(-65px) scale(1.3); opacity: 0; }
+        }
+        .bath-bubble {
+            animation: bubbleRise 1.4s ease-out infinite;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- =====================================================================
+         全螢幕 3D 繪本互動世界畫布 (背景永遠活躍運作)
+         ===================================================================== -->
+    <div id="fullscreen-stage"></div>
+
+    <!-- =====================================================================
+         1. Wayfinder 風格滾輪驅動沉浸式開場劇場 (無框詩意字幕與雲霧視差)
+         ===================================================================== -->
+    <div id="intro-curtain" class="px-6 text-center">
+        <!-- 隨滾輪向兩側散開的夢幻前景雲霧 -->
+        <div id="mist-cloud-left" class="mist-layer w-[48vw] h-[48vw] -left-24 top-1/4 bg-white/85"></div>
+        <div id="mist-cloud-right" class="mist-layer w-[52vw] h-[52vw] -right-24 bottom-1/4 bg-pink-100/80"></div>
+        <div id="mist-cloud-top" class="mist-layer w-[60vw] h-[30vw] left-1/4 -top-20 bg-sky-100/75"></div>
+
+        <!-- 中央無框電影級詩意敘事舞台 -->
+        <div id="wayfinder-stage-content" class="relative z-10 max-w-2xl w-full mx-auto flex flex-col items-center justify-center min-h-[260px]">
+            
+            <!-- 第 0 幕：主標題與徽章（隨滾輪緩緩上飄淡出） -->
+            <div id="wf-title-block" class="flex flex-col items-center transition-all duration-300">
+                <p class="text-xs sm:text-sm tracking-[0.35em] font-black text-pink-500/90 uppercase mb-3 wayfinder-poetic-text">
+                    2000 YEARS AGO • THE FLOATING SANCTUARY
+                </p>
+                <h1 class="serif-title text-4xl sm:text-6xl lg:text-7xl font-extrabold text-[#5C4B51] tracking-widest mb-4 wayfinder-poetic-text">
+                    Nicole寵物小島
+                </h1>
+                <p class="serif-title text-sm sm:text-lg text-[#6E5D63] tracking-wider wayfinder-poetic-text">
+                    在公元前兩千年的迷霧海面，一座會呼吸的奇蹟之島正悄然甦醒
+                </p>
+            </div>
+
+            <!-- 第 1~3 幕：無框純淨電影字幕流（隨滾輪平滑浮現與上移） -->
+            <div id="wf-poetic-block" class="hidden flex-col items-center max-w-xl px-4">
+                <p id="wf-poetic-kicker" class="text-[11px] sm:text-xs tracking-[0.3em] font-extrabold text-pink-500 uppercase mb-3 wayfinder-poetic-text">
+                    CHAPTER I
+                </p>
+                <h2 id="wf-poetic-line1" class="serif-title text-2xl sm:text-4xl font-extrabold text-[#5C4B51] leading-snug mb-3 wayfinder-poetic-text">
+                    穿過終年不散的彩虹薄霧
+                </h2>
+                <p id="wf-poetic-line2" class="serif-title text-sm sm:text-lg text-[#6E5D63] leading-relaxed wayfinder-poetic-text">
+                    海風輕輕吹散雲層，漂浮在星露海面上的箱庭島嶼漸漸清晰……
+                </p>
+            </div>
+        </div>
+
+        <!-- 底部極簡滾輪微光引導（無進度條，如 Wayfinder 般純粹直覺） -->
+        <div id="wf-scroll-cue" class="relative z-10 mt-8 flex flex-col items-center gap-2 transition-opacity duration-300">
+            <div class="w-5 h-9 rounded-full border-2 border-[#5C4B51]/40 bg-white/40 flex justify-center pt-1.5">
+                <div class="w-1 h-2 rounded-full bg-pink-500 scroll-mouse-wheel"></div>
+            </div>
+            <span class="serif-title text-xs tracking-[0.22em] font-bold text-[#5C4B51]/80 wayfinder-poetic-text">
+                向下滾動，隨風走進故事
+            </span>
+        </div>
+
+        <!-- 角落極簡跳過按鈕 -->
+        <button onclick="beginVoyage(false)" class="fixed bottom-6 right-6 z-20 px-4 py-2 rounded-full bg-white/55 hover:bg-white/90 text-[#5C4B51] serif-title text-xs tracking-widest font-bold backdrop-blur-xs transition">
+            直接登島 <i class="fa-solid fa-arrow-right ml-1 text-[10px]"></i>
+        </button>
+    </div>
+
+    <!-- =====================================================================
+         2. 全螢幕懸浮空間 HUD (Minimal Floating Spatial Interface)
+         ===================================================================== -->
+    <div id="hud-layer" class="fixed inset-0 z-20 pointer-events-none flex flex-col justify-between p-4 sm:p-6 transition-opacity duration-700 opacity-0">
+        
+        <!-- 頂部：極簡標題徽章、四大功能小屋導覽與空間章節膠囊 -->
+        <div class="flex flex-wrap items-start justify-between gap-3">
+            <!-- 左上角島嶼印記與親密度 -->
+            <div class="pointer-events-auto storybook-glass rounded-full px-4 py-2 flex items-center gap-3">
+                <button onclick="returnToTitleCurtain()" title="返回序章" class="w-8 h-8 rounded-full bg-pink-100 text-pink-500 flex items-center justify-center hover:scale-105 transition">
+                    <i class="fa-solid fa-island-tropical"></i>
+                </button>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-black text-sm text-[#5C4B51]">Nicole寵物小島</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold">2000 B.C.</span>
+                    </div>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span class="text-[11px] font-bold text-pink-500">❤️ <span id="affinity-score">35</span></span>
+                        <div class="w-20 h-1.5 bg-pink-100 rounded-full overflow-hidden">
+                            <div id="affinity-bar" class="h-full bg-gradient-to-r from-pink-400 to-amber-400 transition-all duration-300" style="width: 35%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右上角：章節抽屜與四大功能小屋快捷導覽 -->
+            <div class="pointer-events-auto flex flex-wrap items-center gap-2">
+                <button onclick="visitCottage('wardrobe')" class="storybook-glass hover:bg-pink-50 px-3 py-2 rounded-full text-xs font-extrabold text-[#5C4B51] transition flex items-center gap-1.5">
+                    <span>🎀</span><span class="hidden md:inline">換裝室</span>
+                </button>
+                <button onclick="visitCottage('bathhouse')" class="storybook-glass hover:bg-sky-50 px-3 py-2 rounded-full text-xs font-extrabold text-[#5C4B51] transition flex items-center gap-1.5">
+                    <span>🛁</span><span class="hidden md:inline">泡泡澡堂</span>
+                </button>
+                <button onclick="visitCottage('bakery')" class="storybook-glass hover:bg-amber-50 px-3 py-2 rounded-full text-xs font-extrabold text-[#5C4B51] transition flex items-center gap-1.5">
+                    <span>🧁</span><span class="hidden md:inline">烘焙屋</span>
+                </button>
+                <button onclick="visitCottage('library')" class="storybook-glass hover:bg-purple-50 px-3 py-2 rounded-full text-xs font-extrabold text-[#5C4B51] transition flex items-center gap-1.5">
+                    <span>🔮</span><span class="hidden md:inline">占卜圖書館</span>
+                </button>
+                <button onclick="openDrawer('worldview')" class="storybook-glass hover:bg-white px-3.5 py-2 rounded-full text-xs font-extrabold text-[#5C4B51] transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-earth-asia text-emerald-500"></i><span class="hidden sm:inline">世界觀</span>
+                </button>
+                <button onclick="openDrawer('encyclopedia')" class="storybook-glass hover:bg-white px-3.5 py-2 rounded-full text-xs font-extrabold text-[#5C4B51] transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-book-open text-pink-500"></i><span class="hidden sm:inline">生物圖鑑</span>
+                </button>
+                <button onclick="startCinematicStory()" class="storybook-glass hover:bg-white px-3.5 py-2 rounded-full text-xs font-extrabold text-[#5C4B51] transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-feather-pointed text-amber-500"></i><span class="hidden sm:inline">登島物語</span>
+                </button>
+                <button onclick="openDrawer('ending')" class="storybook-glass hover:bg-white px-3.5 py-2 rounded-full text-xs font-extrabold text-[#5C4B51] transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-award text-indigo-500"></i><span class="hidden sm:inline">居民證</span>
+                </button>
+                <button onclick="resetCameraView()" title="重置視角" class="storybook-glass hover:bg-white w-9 h-9 rounded-full flex items-center justify-center text-sky-500 transition">
+                    <i class="fa-solid fa-video"></i>
+                </button>
+                <button onclick="toggleAudio()" title="開關音效" class="storybook-glass hover:bg-white w-9 h-9 rounded-full flex items-center justify-center text-pink-500 transition">
+                    <i id="sound-icon" class="fa-solid fa-volume-xmark"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 底部：依據「故事導覽模式」或「自由探索模式」切換底部界面 -->
+        <div class="w-full max-w-4xl mx-auto">
+            
+            <!-- 模式 A：Wayfinder 電影字幕式物語推進框 -->
+            <div id="cinematic-story-bar" class="hidden pointer-events-auto storybook-glass rounded-3xl p-5 sm:p-6 text-center relative">
+                <button onclick="exitCinematicStory()" class="absolute top-3.5 right-4 text-xs font-bold text-[#9A888E] hover:text-pink-500">
+                    跳過物語 <i class="fa-solid fa-xmark ml-0.5"></i>
+                </button>
+                <span id="cine-chapter-badge" class="inline-block px-3 py-0.5 rounded-full bg-pink-100 text-pink-600 text-xs font-black mb-2">
+                    序章 1 / 4
+                </span>
+                <h3 id="cine-title" class="serif-title text-xl sm:text-2xl font-extrabold text-[#5C4B51] mb-1.5">
+                    迷霧彼端的微光之島
+                </h3>
+                <p id="cine-text" class="text-xs sm:text-sm text-[#6E5D63] max-w-2xl mx-auto leading-relaxed mb-4 subtitle-enter">
+                    兩千年前，年輕的旅人駕著木帆船穿過終年不散的彩虹薄霧，首次踏上了這座漂浮在星露海面上的秘密島嶼……
+                </p>
+                <div class="flex items-center justify-center gap-3">
+                    <div id="cine-dots" class="flex gap-1.5 mr-2"></div>
+                    <button id="cine-next-btn" onclick="advanceCinematicStory()" class="bubble-btn px-6 py-2 rounded-full text-xs sm:text-sm font-black">
+                        繼續旅程 <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 模式 B：自由探索與寵物互動操作列 -->
+            <div id="explore-controls" class="flex flex-col gap-2.5">
+                <!-- 動態小語提示條 -->
+                <div class="pointer-events-auto self-center storybook-glass px-4 py-1.5 rounded-full text-xs font-bold text-[#5C4B51] flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span id="status-text">按住滑鼠可直接抓起小生物移動！點擊小屋可進入換裝、洗澡與烘焙～</span>
+                </div>
+
+                <div class="flex flex-col md:flex-row items-center justify-between gap-2.5">
+                    <!-- 角色 4 套造型切換器 -->
+                    <div class="pointer-events-auto storybook-glass rounded-full px-3 py-1.5 flex items-center gap-1.5">
+                        <span class="text-[11px] font-black text-[#7A686E] pl-1.5 pr-1">造型</span>
+                        <button onclick="changeOutfit('forest')" id="outfit-forest" class="outfit-btn px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 border border-emerald-400 transition">🌿 森林</button>
+                        <button onclick="changeOutfit('pastel')" id="outfit-pastel" class="outfit-btn px-2.5 py-1 rounded-full text-xs font-bold hover:bg-pink-50 border border-transparent transition">🎀 櫻花</button>
+                        <button onclick="changeOutfit('starlight')" id="outfit-starlight" class="outfit-btn px-2.5 py-1 rounded-full text-xs font-bold hover:bg-indigo-50 border border-transparent transition">✨ 星露</button>
+                        <button onclick="changeOutfit('sailor')" id="outfit-sailor" class="outfit-btn px-2.5 py-1 rounded-full text-xs font-bold hover:bg-amber-50 border border-transparent transition">⛵ 航海</button>
+                    </div>
+
+                    <!-- 寵物互動指令按鈕群 -->
+                    <div class="pointer-events-auto flex flex-wrap justify-center gap-2">
+                        <button onclick="interactPet()" class="bubble-btn px-4 py-2 rounded-full font-black text-xs flex items-center gap-1.5">
+                            <i class="fa-solid fa-hand-holding-heart"></i> 摸摸
+                        </button>
+                        <button onclick="interactPickUp()" class="bubble-btn-lavender px-4 py-2 rounded-full font-black text-xs flex items-center gap-1.5">
+                            <i class="fa-solid fa-hands-holding"></i> 抱起/放下
+                        </button>
+                        <button onclick="interactFeed()" class="bubble-btn-mint px-4 py-2 rounded-full font-black text-xs flex items-center gap-1.5">
+                            <i class="fa-solid fa-apple-whole"></i> 餵星露果
+                        </button>
+                        <button onclick="inspectNearestCreature()" class="storybook-glass hover:bg-white px-3.5 py-2 rounded-full font-black text-xs text-[#5C4B51] flex items-center gap-1.5 transition">
+                            <i class="fa-solid fa-magnifying-glass text-pink-500"></i> 生物檔案
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================================
+         3. 空間浮動抽屜視窗 (世界觀 / 生物圖鑑 / 單隻生物詳情 / 結尾紀念證)
+         ===================================================================== -->
+    <div id="spatial-modal-backdrop" onclick="closeDrawerOnBackdrop(event)" class="fixed inset-0 z-40 hidden items-center justify-center p-4 bg-black/30 backdrop-blur-xs">
+        
+        <!-- 視窗 A：世界觀介紹 -->
+        <div id="drawer-worldview" class="drawer-panel hidden storybook-glass max-w-2xl w-full rounded-3xl p-6 sm:p-8 relative max-h-[85vh] overflow-y-auto">
+            <button onclick="closeDrawer()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-pink-50 text-pink-500 hover:bg-pink-100 flex items-center justify-center font-bold">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="text-center mb-6">
+                <span class="text-xs font-black px-3 py-1 rounded-full bg-emerald-100 text-emerald-700">WORLDVIEW • 2000 B.C.</span>
+                <h2 class="serif-title text-2xl sm:text-3xl font-extrabold mt-2 text-[#5C4B51]">兩千年前的神秘共生世界</h2>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                <div class="bg-white/75 rounded-2xl p-4 border border-amber-100">
+                    <div class="text-2xl mb-2">⏳</div>
+                    <h4 class="font-black text-sm mb-1">時代與地點</h4>
+                    <p class="text-xs text-[#7A686E] leading-relaxed">公元前兩千年的迷霧海域深處，土壤蘊含星露結晶，四季花開不敗。</p>
+                </div>
+                <div class="bg-white/75 rounded-2xl p-4 border border-pink-100">
+                    <div class="text-2xl mb-2">✨</div>
+                    <h4 class="font-black text-sm mb-1">神秘萌萌生物</h4>
+                    <p class="text-xs text-[#7A686E] leading-relaxed">以甜美星露果與溫柔撫摸為食，開心時會散發出治癒的愛心微光。</p>
+                </div>
+                <div class="bg-white/75 rounded-2xl p-4 border border-indigo-100">
+                    <div class="text-2xl mb-2">🏡</div>
+                    <h4 class="font-black text-sm mb-1">人類登島共生</h4>
+                    <p class="text-xs text-[#7A686E] leading-relaxed">第一批旅人登上島嶼後，與親人的小生物展開了無憂無慮的共同生活。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 視窗 B：島嶼生物總圖鑑 -->
+        <div id="drawer-encyclopedia" class="drawer-panel hidden storybook-glass max-w-3xl w-full rounded-3xl p-6 sm:p-8 relative max-h-[85vh] overflow-y-auto">
+            <button onclick="closeDrawer()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-pink-50 text-pink-500 hover:bg-pink-100 flex items-center justify-center font-bold">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="text-center mb-5">
+                <span class="text-xs font-black px-3 py-1 rounded-full bg-pink-100 text-pink-600">CREATURE ARCHIVE</span>
+                <h2 class="serif-title text-2xl sm:text-3xl font-extrabold mt-2 text-[#5C4B51]">小島神秘生物圖鑑</h2>
+                <p class="text-xs text-[#7A686E] mt-1">點擊任意小生物查看詳細檔案（也可在 3D 小島上直接點擊牠們！）</p>
+            </div>
+            <div id="encyclopedia-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+        </div>
+
+        <!-- 視窗 C：單隻小生物詳細檔案 -->
+        <div id="drawer-creature-detail" class="drawer-panel hidden storybook-glass max-w-md w-full rounded-3xl p-6 sm:p-8 relative text-center">
+            <button onclick="closeDrawer()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-pink-50 text-pink-500 hover:bg-pink-100 flex items-center justify-center font-bold">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div id="detail-avatar" class="w-24 h-24 mx-auto mb-3 rounded-full bg-gradient-to-tr from-pink-100 to-amber-100 flex items-center justify-center border-4 border-white shadow-md"></div>
+            <span id="detail-tag" class="text-xs font-black px-3 py-1 rounded-full bg-emerald-100 text-emerald-700"></span>
+            <h3 id="detail-name" class="text-2xl font-black mt-2 text-[#5C4B51]"></h3>
+            <p id="detail-latin" class="text-xs italic text-[#9A888E] mb-4"></p>
+            <div class="bg-white/80 rounded-2xl p-4 text-left text-xs sm:text-sm text-[#5C4B51] space-y-2 border border-pink-100">
+                <p><strong>✨ 生態習性：</strong><span id="detail-desc"></span></p>
+                <p><strong>🍓 最愛食物：</strong><span id="detail-food"></span></p>
+                <p><strong>💕 親密互動：</strong><span id="detail-habit"></span></p>
+            </div>
+            <button onclick="closeDrawer()" class="bubble-btn mt-5 px-6 py-2.5 rounded-full font-black text-sm">
+                回到小島繼續互動
+            </button>
+        </div>
+
+        <!-- 視窗 D：結尾區域與登島紀念證 -->
+        <div id="drawer-ending" class="drawer-panel hidden storybook-glass max-w-md w-full rounded-3xl p-6 sm:p-8 relative text-center border-4 border-amber-200">
+            <button onclick="closeDrawer()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <span class="inline-block px-3 py-1 rounded-full bg-pink-100 text-pink-600 text-xs font-black mb-2">EPILOGUE & PASSPORT</span>
+            <h3 class="serif-title text-2xl font-extrabold text-[#5C4B51]">兩千年的溫柔約定</h3>
+            <p class="text-xs text-[#7A686E] mt-2 leading-relaxed">
+                無論時光如何流轉，Nicole 寵物小島永遠為你保留這片花海與星空。感謝你成為這群小生物最溫暖的夥伴！
+            </p>
+            <div class="my-5 p-4 rounded-2xl bg-gradient-to-r from-pink-50 via-amber-50 to-emerald-50 border-2 border-dashed border-amber-300">
+                <p class="text-xs text-[#7A686E]">登島紀元：公元前 2000 年</p>
+                <p class="text-base font-black text-pink-600 mt-1" id="ending-outfit-name">當前造型：森林採集裝</p>
+                <p class="text-sm font-bold text-[#5C4B51] mt-1.5">小島累積親密度：<span id="ending-score" class="text-amber-600 text-xl font-black">35</span> pt</p>
+            </div>
+            <div class="flex justify-center gap-3">
+                <button onclick="closeDrawer()" class="bubble-btn-mint px-6 py-2.5 rounded-full font-black text-sm">
+                    繼續留在島上
+                </button>
+                <button onclick="returnToTitleCurtain()" class="px-5 py-2.5 rounded-full bg-white border border-pink-200 text-pink-600 font-bold text-xs hover:bg-pink-50 transition">
+                    重溫開場序幕
+                </button>
+            </div>
+        </div>
+
+        <!-- =====================================================================
+             視窗 E：功能小屋 1 — 🎀 蕾絲蝶結換裝室 (Wardrobe Cottage)
+             ===================================================================== -->
+        <div id="drawer-wardrobe" class="drawer-panel hidden storybook-glass max-w-xl w-full rounded-3xl p-6 sm:p-8 relative max-h-[88vh] overflow-y-auto border-4 border-pink-200">
+            <button onclick="closeDrawer()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-pink-50 text-pink-500 hover:bg-pink-100 flex items-center justify-center font-bold">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="text-center mb-5">
+                <span class="text-xs font-black px-3 py-1 rounded-full bg-pink-100 text-pink-600">DRESS-UP BOUTIQUE</span>
+                <h2 class="serif-title text-2xl sm:text-3xl font-extrabold mt-2 text-[#5C4B51]">🎀 蕾絲蝶結換裝小屋</h2>
+                <p class="text-xs text-[#7A686E] mt-1">挑選一套喜歡的登島造型，3D 角色會立刻換上新衣服與頭飾喔！</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5" id="wardrobe-cards">
+                <div onclick="selectWardrobeOutfit('forest')" class="wardrobe-card cursor-pointer rounded-2xl p-4 bg-emerald-50/90 hover:bg-emerald-100/80 border-2 border-emerald-300 transition flex items-center gap-3.5">
+                    <div class="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-3xl shadow-xs shrink-0">🌿</div>
+                    <div class="text-left">
+                        <h4 class="font-black text-sm text-emerald-900">森林採集裝</h4>
+                        <p class="text-[11px] text-emerald-700 mt-0.5">草綠蓬蓬裙 + 編織大草帽，適合漫步花海。</p>
+                    </div>
+                </div>
+                <div onclick="selectWardrobeOutfit('pastel')" class="wardrobe-card cursor-pointer rounded-2xl p-4 bg-pink-50/90 hover:bg-pink-100/80 border-2 border-pink-300 transition flex items-center gap-3.5">
+                    <div class="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-3xl shadow-xs shrink-0">🎀</div>
+                    <div class="text-left">
+                        <h4 class="font-black text-sm text-pink-900">櫻花甜點裙</h4>
+                        <p class="text-[11px] text-pink-700 mt-0.5">粉嫩蕾絲裙 + 萌萌兔耳髮箍，最受小生物歡迎！</p>
+                    </div>
+                </div>
+                <div onclick="selectWardrobeOutfit('starlight')" class="wardrobe-card cursor-pointer rounded-2xl p-4 bg-indigo-50/90 hover:bg-indigo-100/80 border-2 border-indigo-300 transition flex items-center gap-3.5">
+                    <div class="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-3xl shadow-xs shrink-0">✨</div>
+                    <div class="text-left">
+                        <h4 class="font-black text-sm text-indigo-900">星露魔法袍</h4>
+                        <p class="text-[11px] text-indigo-700 mt-0.5">紫羅蘭披肩 + 尖頂魔女帽，散發神秘星光。</p>
+                    </div>
+                </div>
+                <div onclick="selectWardrobeOutfit('sailor')" class="wardrobe-card cursor-pointer rounded-2xl p-4 bg-sky-50/90 hover:bg-sky-100/80 border-2 border-sky-300 transition flex items-center gap-3.5">
+                    <div class="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-3xl shadow-xs shrink-0">⛵</div>
+                    <div class="text-left">
+                        <h4 class="font-black text-sm text-sky-900">古典航海服</h4>
+                        <p class="text-[11px] text-sky-700 mt-0.5">海藍水手裙 + 白色貝雷帽，重現初登島風采。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =====================================================================
+             視窗 F：功能小屋 2 — 🛁 泡泡溫泉澡堂 (Pet Bathhouse Spa)
+             ===================================================================== -->
+        <div id="drawer-bathhouse" class="drawer-panel hidden storybook-glass max-w-lg w-full rounded-3xl p-6 sm:p-8 relative text-center border-4 border-sky-200">
+            <button onclick="closeDrawer()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-sky-50 text-sky-500 hover:bg-sky-100 flex items-center justify-center font-bold">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <span class="text-xs font-black px-3 py-1 rounded-full bg-sky-100 text-sky-600">BUBBLE ONSEN SPA</span>
+            <h2 class="serif-title text-2xl sm:text-3xl font-extrabold mt-2 text-[#5C4B51]">🛁 泡泡溫泉澡堂</h2>
+            <p class="text-xs text-[#7A686E] mt-1 mb-4">選擇一隻小生物放進星露花瓣木桶裡洗香香，清潔度與親密度都會大幅提升！</p>
+
+            <!-- 選擇要洗澡的寵物 -->
+            <div class="mb-4">
+                <label class="block text-xs font-black text-[#5C4B51] mb-1.5">邀請哪位小夥伴泡澡呢？</label>
+                <select id="bath-pet-select" onchange="updateBathPreview()" class="w-full px-4 py-2.5 rounded-2xl bg-white border-2 border-sky-200 text-sm font-bold text-[#5C4B51] focus:outline-none focus:border-sky-400">
+                </select>
+            </div>
+
+            <!-- 互動木桶泡澡舞台 -->
+            <div id="bath-tub-stage" class="relative mx-auto w-56 h-44 rounded-3xl bg-gradient-to-b from-sky-100 to-cyan-100 border-4 border-white shadow-inner flex flex-col items-center justify-center overflow-hidden mb-5">
+                <div id="bath-bubbles-container" class="absolute inset-0 pointer-events-none"></div>
+                <div id="bath-pet-avatar" class="z-10 transition-transform duration-300"></div>
+                <!-- 木桶前沿 -->
+                <div class="absolute bottom-0 inset-x-0 h-14 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 border-t-4 border-amber-300 flex items-center justify-center text-white text-xs font-black tracking-widest shadow-md">
+                    ♨️ 星露花香溫泉桶 ♨️
+                </div>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-3">
+                <button onclick="washPetAction('bubbles')" class="bubble-btn-lavender px-5 py-2.5 rounded-full font-black text-xs sm:text-sm flex items-center gap-1.5">
+                    🫧 搓出綿密泡泡
+                </button>
+                <button onclick="washPetAction('rinse')" class="bubble-btn-mint px-5 py-2.5 rounded-full font-black text-xs sm:text-sm flex items-center gap-1.5">
+                    🚿 花瓣溫水沖洗
+                </button>
+            </div>
+        </div>
+
+        <!-- =====================================================================
+             視窗 G：功能小屋 3 — 🧁 草莓點心烘焙屋 (Starlight Bakery)
+             ===================================================================== -->
+        <div id="drawer-bakery" class="drawer-panel hidden storybook-glass max-w-lg w-full rounded-3xl p-6 sm:p-8 relative text-center border-4 border-amber-200">
+            <button onclick="closeDrawer()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-amber-50 text-amber-600 hover:bg-amber-100 flex items-center justify-center font-bold">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <span class="text-xs font-black px-3 py-1 rounded-full bg-amber-100 text-amber-700">STARLIGHT BAKERY</span>
+            <h2 class="serif-title text-2xl sm:text-3xl font-extrabold mt-2 text-[#5C4B51]">🧁 草莓點心烘焙屋</h2>
+            <p class="text-xs text-[#7A686E] mt-1 mb-5">用島上採集的星露果現烤手工點心，烘焙完成後會自動擺上草地邀請小生物享用！</p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                <button onclick="bakeTreat('星露草莓塔', '🍓', 0xFF4D6D, 8)" class="bg-white/90 hover:bg-pink-50 rounded-2xl p-4 border-2 border-pink-200 transition flex flex-col items-center">
+                    <span class="text-3xl mb-1.5">🍓</span>
+                    <span class="font-black text-xs text-[#5C4B51]">星露草莓塔</span>
+                    <span class="text-[10px] text-pink-500 font-bold mt-1">親密度 +8</span>
+                </button>
+                <button onclick="bakeTreat('蜂蜜雲朵鬆餅', '🥞', 0xFFB703, 10)" class="bg-white/90 hover:bg-amber-50 rounded-2xl p-4 border-2 border-amber-200 transition flex flex-col items-center">
+                    <span class="text-3xl mb-1.5">🥞</span>
+                    <span class="font-black text-xs text-[#5C4B51]">蜂蜜雲朵鬆餅</span>
+                    <span class="text-[10px] text-amber-600 font-bold mt-1">親密度 +10</span>
+                </button>
+                <button onclick="bakeTreat('彩虹星塵馬卡龍', '🧁', 0xBDB2FF, 12)" class="bg-white/90 hover:bg-purple-50 rounded-2xl p-4 border-2 border-purple-200 transition flex flex-col items-center">
+                    <span class="text-3xl mb-1.5">🧁</span>
+                    <span class="font-black text-xs text-[#5C4B51]">彩虹馬卡龍</span>
+                    <span class="text-[10px] text-purple-600 font-bold mt-1">親密度 +12</span>
+                </button>
+            </div>
+            <p class="text-[11px] text-[#9A888E]">💡 點擊任意食譜即可出爐並投餵給島上的小生物！</p>
+        </div>
+
+        <!-- =====================================================================
+             視窗 H：功能小屋 4 — 🔮 星露占卜圖書館 (Starlight Observatory)
+             ===================================================================== -->
+        <div id="drawer-library" class="drawer-panel hidden storybook-glass max-w-lg w-full rounded-3xl p-6 sm:p-8 relative text-center border-4 border-purple-200">
+            <button onclick="closeDrawer()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-purple-50 text-purple-600 hover:bg-purple-100 flex items-center justify-center font-bold">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <span class="text-xs font-black px-3 py-1 rounded-full bg-purple-100 text-purple-700">STARLIGHT LIBRARY</span>
+            <h2 class="serif-title text-2xl sm:text-3xl font-extrabold mt-2 text-[#5C4B51]">🔮 星露占卜圖書館</h2>
+            <p class="text-xs text-[#7A686E] mt-1 mb-4">翻閱兩千年前的古代生態手札，或抽取今日的小島幸運星露占卜。</p>
+
+            <div id="oracle-card-box" class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-2xl p-5 border-2 border-purple-200 mb-5">
+                <div class="text-3xl mb-2" id="oracle-emoji">✨</div>
+                <h4 class="font-black text-base text-purple-900" id="oracle-title">點擊下方水晶球抽取今日星語</h4>
+                <p class="text-xs text-[#6E5D63] mt-1.5 leading-relaxed" id="oracle-desc">
+                    星露水晶正閃爍著溫柔光芒，看看今天哪隻小生物會帶給你特別的好運吧！
+                </p>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-3">
+                <button onclick="drawIslandFortune()" class="bubble-btn-lavender px-6 py-2.5 rounded-full font-black text-xs sm:text-sm">
+                    🔮 抽取今日星語
+                </button>
+                <button onclick="openDrawer('encyclopedia')" class="bubble-btn px-6 py-2.5 rounded-full font-black text-xs sm:text-sm">
+                    📖 翻閱全生物圖鑑
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ==========================================================================
+           3.5 Wayfinder 風格無框滾輪驅動故事動畫 (Scroll-Driven Poetic Prologue)
+           ========================================================================== */
+        const WAYFINDER_POETIC_SCENES = [
+            {
+                kicker: "I • 迷霧彼端",
+                line1: "穿過終年不散的彩虹薄霧",
+                line2: "兩千年前，海風輕輕吹散雲層，漂浮在星露海面上的奇蹟箱庭漸漸清晰……"
+            },
+            {
+                kicker: "II • 生命的微光",
+                line1: "草叢裡探出十雙圓滾滾的眼睛",
+                line2: "雲朵麻糬團、星露小耳狐與櫻花垂耳兔從未見過人類，卻好奇地搖著尾巴迎上前來。"
+            },
+            {
+                kicker: "III • 溫柔的共生",
+                line1: "踏上柔軟草地，開啟兩千年的約定",
+                line2: "再輕輕滾動一下，最後一層薄霧將化作星光散去，親自走進這座小島吧！"
+            }
+        ];
+
+        let introScrollProgress = 0; // 0.0 ~ 1.0
+        let lastPoeticSceneIdx = -1;
+        let introTouchStartY = 0;
+
+        function isIntroCurtainActive() {
+            const curtain = document.getElementById('intro-curtain');
+            return curtain && !curtain.classList.contains('curtain-hidden');
+        }
+
+        function updateScrollPrologue(deltaNormalized) {
+            if (!isIntroCurtainActive()) return;
+
+            introScrollProgress = Math.max(0, Math.min(1, introScrollProgress + deltaNormalized));
+
+            // 1. 雲霧前景向左右與上方視差散開，讓後方 3D 小島越來越清晰
+            const mistL = document.getElementById('mist-cloud-left');
+            const mistR = document.getElementById('mist-cloud-right');
+            const mistT = document.getElementById('mist-cloud-top');
+            if (mistL && mistR && mistT) {
+                mistL.style.transform = `translate3d(${-introScrollProgress * 45}vw, ${-introScrollProgress * 10}vh, 0)`;
+                mistL.style.opacity = `${Math.max(0, 0.85 - introScrollProgress * 0.9)}`;
+                mistR.style.transform = `translate3d(${introScrollProgress * 45}vw, ${introScrollProgress * 10}vh, 0)`;
+                mistR.style.opacity = `${Math.max(0, 0.85 - introScrollProgress * 0.9)}`;
+                mistT.style.transform = `translate3d(0, ${-introScrollProgress * 35}vh, 0)`;
+                mistT.style.opacity = `${Math.max(0, 0.8 - introScrollProgress * 0.95)}`;
+            }
+
+            // 2. 背景薄霧與模糊度隨滾動漸散，直接透出全螢幕 3D 小島
+            const curtain = document.getElementById('intro-curtain');
+            const bgAlpha = Math.max(0.05, 0.65 - introScrollProgress * 0.62);
+            const blurPx = Math.max(0, 5 - introScrollProgress * 5);
+            curtain.style.background = `radial-gradient(circle at center, rgba(255, 253, 247, ${bgAlpha * 0.6}) 0%, rgba(255, 232, 242, ${bgAlpha}) 60%, rgba(212, 238, 255, ${bgAlpha}) 100%)`;
+            curtain.style.backdropFilter = `blur(${blurPx.toFixed(1)}px)`;
+
+            // 3. 連動 3D 鏡頭：從高空雲層俯衝旋轉降落至島嶼草地
+            camOrbit.targetRadius = 40 - introScrollProgress * 17.5;
+            camOrbit.targetPhi = 0.38 + introScrollProgress * 0.50;
+            camOrbit.targetTheta += deltaNormalized * 2.8;
+
+            // 4. Wayfinder 無框詩意字幕流淡入淡出切換 (0~0.24 為標題，0.24~1.0 為三段詩意字幕)
+            const titleBlock = document.getElementById('wf-title-block');
+            const poeticBlock = document.getElementById('wf-poetic-block');
+
+            if (introScrollProgress < 0.24) {
+                const tRatio = introScrollProgress / 0.24; // 0 -> 1
+                titleBlock.classList.remove('hidden');
+                titleBlock.style.opacity = `${1 - tRatio}`;
+                titleBlock.style.transform = `translateY(${-tRatio * 28}px)`;
+                poeticBlock.classList.add('hidden');
+                poeticBlock.classList.remove('flex');
+                lastPoeticSceneIdx = -1;
+            } else {
+                titleBlock.classList.add('hidden');
+                poeticBlock.classList.remove('hidden');
+                poeticBlock.classList.add('flex');
+
+                const subProgress = (introScrollProgress - 0.24) / 0.76; // 0 -> 1
+                const sceneIdx = Math.min(WAYFINDER_POETIC_SCENES.length - 1, Math.floor(subProgress * WAYFINDER_POETIC_SCENES.length));
+                const localProgress = (subProgress * WAYFINDER_POETIC_SCENES.length) - sceneIdx; // 0 -> 1 within scene
+
+                // 計算每一句詩意字幕的平滑「浮現 -> 停留 -> 上飄淡出」透明度曲線
+                let sceneOpacity = 1;
+                if (localProgress < 0.2) {
+                    sceneOpacity = localProgress / 0.2;
+                } else if (localProgress > 0.8 && sceneIdx < WAYFINDER_POETIC_SCENES.length - 1) {
+                    sceneOpacity = (1 - localProgress) / 0.2;
+                }
+                const floatY = (0.5 - localProgress) * 26;
+
+                poeticBlock.style.opacity = `${Math.max(0, Math.min(1, sceneOpacity))}`;
+                poeticBlock.style.transform = `translateY(${floatY.toFixed(1)}px)`;
+
+                if (sceneIdx !== lastPoeticSceneIdx) {
+                    lastPoeticSceneIdx = sceneIdx;
+                    const s = WAYFINDER_POETIC_SCENES[sceneIdx];
+                    document.getElementById('wf-poetic-kicker').textContent = s.kicker;
+                    document.getElementById('wf-poetic-line1').textContent = s.line1;
+                    document.getElementById('wf-poetic-line2').textContent = s.line2;
+                    if (audioEnabled) {
+                        playChime(['E5', 'G5', 'B5'][sceneIdx]);
+                    }
+                }
+            }
+
+            // 當滾輪進度達到 100% 時，自動撥開最後一層薄霧踏上小島！
+            if (introScrollProgress >= 1) {
+                beginVoyage(false);
+            }
+        }
+
+        // 點擊或滾動結束進入小島
+        function beginVoyage(withStory) {
+            if (!audioEnabled) toggleAudio();
+            playChime('C5');
+            setTimeout(() => playChime('E5'), 120);
+            setTimeout(() => playChime('G5'), 240);
+
+            const curtain = document.getElementById('intro-curtain');
+            curtain.classList.add('curtain-hidden');
+            curtain.style.background = '';
+            curtain.style.backdropFilter = '';
+            document.getElementById('hud-layer').classList.remove('opacity-0');
+
+            if (withStory) {
+                startCinematicStory();
+            } else {
+                exitCinematicStory();
+            }
+        }
+
+        function returnToTitleCurtain() {
+            closeDrawer();
+            introScrollProgress = 0;
+            lastPoeticSceneIdx = -1;
+
+            const titleBlock = document.getElementById('wf-title-block');
+            const poeticBlock = document.getElementById('wf-poetic-block');
+            titleBlock.classList.remove('hidden');
+            titleBlock.style.opacity = '1';
+            titleBlock.style.transform = 'translateY(0px)';
+            poeticBlock.classList.add('hidden');
+            poeticBlock.classList.remove('flex');
+
+            ['mist-cloud-left', 'mist-cloud-right', 'mist-cloud-top'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.style.transform = 'translate3d(0, 0, 0)';
+                    el.style.opacity = '0.85';
+                }
+            });
+
+            const curtain = document.getElementById('intro-curtain');
+            curtain.style.background = '';
+            curtain.style.backdropFilter = '';
+            curtain.classList.remove('curtain-hidden');
+
+            camOrbit.targetRadius = 40;
+            camOrbit.targetPhi = 0.38;
+        }
+
+        /* ==========================================================================
+           音效系統初始化 (Tone.js 八音盒合成器)
+           ========================================================================== */
+        let audioEnabled = false;
+        let synth = null;
+
+        function initAudio() {
+            if (synth || typeof Tone === 'undefined') return;
+            synth = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'sine' },
+                envelope: { attack: 0.04, decay: 0.35, sustain: 0.2, release: 1.2 }
+            }).toDestination();
+            synth.volume.value = -10;
+        }
+
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            const icon = document.getElementById('sound-icon');
+            if (audioEnabled) {
+                if (typeof Tone !== 'undefined' && Tone.context.state !== 'running') Tone.start();
+                initAudio();
+                icon.className = 'fa-solid fa-volume-high';
+                playChime('C5');
+                setTimeout(() => playChime('G5'), 130);
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark';
+            }
+        }
+
+        function playChime(note = 'C5') {
+            if (!audioEnabled || !synth) return;
+            try { synth.triggerAttackRelease(note, "8n"); } catch (e) {}
+        }
+
+        /* ==========================================================================
+           2. 生物資料庫與圖鑑 UI (擴充為 10 種完全不同物種)
+           ========================================================================== */
+        const CREATURES_DATA = [
+            {
+                id: 'mochi',
+                name: '雲朵麻糬團 (Mochi-Puff)',
+                latin: 'Puffus nubilum',
+                tag: '溫順治癒系 ★',
+                food: '朝露草莓、軟綿綿花蜜',
+                habit: '被摸摸頭頂的嫩葉時會發出「噗嚕噗嚕」的幸福聲，喜歡被抱在懷裡打盹。',
+                desc: '全身像剛出爐的麻糬一樣Q彈，頭頂長著一片會隨心情擺動的幸運嫩葉，是第一隻主動靠近人類的小生物。',
+                svg: `<svg viewBox="0 0 100 100" class="w-16 h-16">
+                        <ellipse cx="50" cy="60" rx="34" ry="26" fill="#FFFFFF" stroke="#FFB7B2" stroke-width="3"/>
+                        <path d="M50,34 Q62,16 74,28 Q60,38 50,34" fill="#88D8B0"/>
+                        <circle cx="38" cy="56" r="4" fill="#5C4B51"/><circle cx="62" cy="56" r="4" fill="#5C4B51"/>
+                        <ellipse cx="32" cy="63" rx="5" ry="3" fill="#FFB7B2"/><ellipse cx="68" cy="63" rx="5" ry="3" fill="#FFB7B2"/>
+                      </svg>`
+            },
+            {
+                id: 'starfox',
+                name: '星露小耳狐 (Stardust Fox)',
+                latin: 'Vulpes crystallus',
+                tag: '好奇探索系 ★★',
+                food: '月光藍莓、星塵餅乾',
+                habit: '額頭上的星露結晶在夜晚會微微發亮，為迷路的旅人指引回家的方向。',
+                desc: '擁有大大的尖耳朵與蓬鬆尾巴，對人類帶來的指南針充滿好奇，常跳到旅人身邊張望。',
+                svg: `<svg viewBox="0 0 100 100" class="w-16 h-16">
+                        <polygon points="24,45 30,16 45,38" fill="#FFDAC1" stroke="#FFB7B2" stroke-width="2"/>
+                        <polygon points="76,45 70,16 55,38" fill="#FFDAC1" stroke="#FFB7B2" stroke-width="2"/>
+                        <ellipse cx="50" cy="60" rx="32" ry="25" fill="#FFDAC1" stroke="#FFB7B2" stroke-width="3"/>
+                        <polygon points="50,39 53,45 50,51 47,45" fill="#FFF59D"/>
+                        <circle cx="38" cy="58" r="4" fill="#5C4B51"/><circle cx="62" cy="58" r="4" fill="#5C4B51"/>
+                      </svg>`
+            },
+            {
+                id: 'jelly',
+                name: '薄荷果凍獸 (Minty Slime)',
+                latin: 'Gelatina mentha',
+                tag: '水潤清涼系 ★★',
+                food: '冰晶露水、三葉草嫩芽',
+                habit: '身體半透明且涼涼的，開心時體內會冒出像汽水一樣的彩虹小氣泡。',
+                desc: '棲息在島嶼清泉旁的水元素生物，喜歡被人類用雙手捧起來，能讓疲憊的心情瞬間清涼平靜。',
+                svg: `<svg viewBox="0 0 100 100" class="w-16 h-16">
+                        <path d="M20,75 Q20,32 50,32 Q80,32 80,75 Q50,86 20,75 Z" fill="#B5EAD7" stroke="#88D8B0" stroke-width="3"/>
+                        <circle cx="36" cy="48" r="4" fill="#FFFFFF" opacity="0.8"/>
+                        <circle cx="40" cy="60" r="3.8" fill="#5C4B51"/><circle cx="60" cy="60" r="3.8" fill="#5C4B51"/>
+                      </svg>`
+            },
+            {
+                id: 'owl',
+                name: '紫羅蘭絨絨梟 (Velvet Owlet)',
+                latin: 'Bubo lavandula',
+                tag: '夢幻守護系 ★★★',
+                food: '薰衣草花籽、甜蜜堅果',
+                habit: '圓滾滾得像一顆紫羅蘭毛線球，喜歡停在蘑菇屋頂端守護旅人的美夢。',
+                desc: '羽毛散發著淡淡薰衣草香氣的神秘小梟，喜歡在草地上蹦蹦跳跳追著人類跑。',
+                svg: `<svg viewBox="0 0 100 100" class="w-16 h-16">
+                        <ellipse cx="50" cy="58" rx="31" ry="29" fill="#C7CEEA" stroke="#9499D6" stroke-width="3"/>
+                        <circle cx="39" cy="54" r="6" fill="#FFFFFF"/><circle cx="61" cy="54" r="6" fill="#FFFFFF"/>
+                        <circle cx="39" cy="54" r="3.2" fill="#5C4B51"/><circle cx="61" cy="54" r="3.2" fill="#5C4B51"/>
+                        <polygon points="47,60 53,60 50,65" fill="#FFB7B2"/>
+                      </svg>`
+            },
+            {
+                id: 'sakuraBunny',
+                name: '櫻花垂耳兔 (Sakura Lop)',
+                latin: 'Oryctolagus flos',
+                tag: '甜美花語系 ★★',
+                food: '櫻花瓣蜜糖、脆甜胡蘿蔔',
+                habit: '長長的垂耳末端染著櫻花粉色，每次跳躍都會在空氣中留下淡淡花瓣香氣。',
+                desc: '生活在櫻花林深處的溫柔小兔，頭頂戴著一朵永不凋謝的八重櫻花冠，最喜歡被輕輕撫摸長耳朵。',
+                svg: `<svg viewBox="0 0 100 100" class="w-16 h-16">
+                        <ellipse cx="26" cy="58" rx="9" ry="22" transform="rotate(15 26 58)" fill="#FFD6E0" stroke="#FF9AA2" stroke-width="2.5"/>
+                        <ellipse cx="74" cy="58" rx="9" ry="22" transform="rotate(-15 74 58)" fill="#FFD6E0" stroke="#FF9AA2" stroke-width="2.5"/>
+                        <circle cx="50" cy="56" r="26" fill="#FFFDF7" stroke="#FFB7B2" stroke-width="3"/>
+                        <circle cx="40" cy="54" r="3.8" fill="#5C4B51"/><circle cx="60" cy="54" r="3.8" fill="#5C4B51"/>
+                        <circle cx="50" cy="30" r="7" fill="#FF9AA2"/>
+                      </svg>`
+            },
+            {
+                id: 'honeyBear',
+                name: '蜂蜜琥珀熊 (Honey Cub)',
+                latin: 'Ursus melissae',
+                tag: '元氣貪吃系 ★★',
+                food: '百花金黃蜂蜜、烤橡果派',
+                habit: '圓圓的肚子上有天然的蜂蜜愛心印記，聞到果香時會舉起雙手原地轉圈。',
+                desc: '毛色像溫暖焦糖布丁的小熊精靈，力氣雖小卻很愛幫忙搬運星露果，個性憨厚又愛撒嬌。',
+                svg: `<svg viewBox="0 0 100 100" class="w-16 h-16">
+                        <circle cx="30" cy="34" r="11" fill="#E6B87D" stroke="#BC8A5F" stroke-width="2.5"/>
+                        <circle cx="70" cy="34" r="11" fill="#E6B87D" stroke="#BC8A5F" stroke-width="2.5"/>
+                        <circle cx="50" cy="58" r="28" fill="#F3D5B5" stroke="#BC8A5F" stroke-width="3"/>
+                        <ellipse cx="50" cy="64" rx="11" ry="8" fill="#FFFDF7"/>
+                        <circle cx="39" cy="52" r="3.8" fill="#5C4B51"/><circle cx="61" cy="52" r="3.8" fill="#5C4B51"/>
+                      </svg>`
+            },
+            {
+                id: 'coralTurtle',
+                name: '珊瑚星螺龜 (Coral Tortoise)',
+                latin: 'Testudo corallium',
+                tag: '悠哉海風系 ★★★',
+                food: '海鹽海藻餅、脆脆生菜葉',
+                habit: '背甲上生長著粉彩迷你珊瑚與海星，步調雖然慢吞吞卻總能找到寶藏。',
+                desc: '從淺海沙灘爬上草地的神秘小海龜，背殼像一座微縮的珊瑚花園，被抓起來時會害羞地縮一下腳腳。',
+                svg: `<svg viewBox="0 0 100 100" class="w-16 h-16">
+                        <path d="M22,64 Q22,34 50,34 Q78,34 78,64 Z" fill="#FF9AA2" stroke="#E0828A" stroke-width="3"/>
+                        <circle cx="50" cy="30" r="6" fill="#FFF59D"/>
+                        <ellipse cx="50" cy="66" rx="34" ry="11" fill="#B5EAD7" stroke="#88D8B0" stroke-width="2.5"/>
+                        <circle cx="38" cy="56" r="3.5" fill="#5C4B51"/><circle cx="62" cy="56" r="3.5" fill="#5C4B51"/>
+                      </svg>`
+            },
+            {
+                id: 'cottonSheep',
+                name: '棉花糖雲羊 (Cotton Lamb)',
+                latin: 'Ovis saccharum',
+                tag: '蓬鬆軟綿系 ★★',
+                food: '甜三葉草、雲朵棉花糖',
+                habit: '身上的羊毛比雲朵還輕盈，頭頂有一對彎彎的焦糖色小羊角，喜歡依偎在旅人腳邊。',
+                desc: '每當牠在花叢裡打滾，身上就會沾滿五顏六色的花粉，抱起來就像抱著一顆溫熱的雲朵抱枕。',
+                svg: `<svg viewBox="0 0 100 100" class="w-16 h-16">
+                        <circle cx="50" cy="56" r="30" fill="#FFFDF7" stroke="#E2ECE9" stroke-width="4"/>
+                        <path d="M26,38 Q16,28 28,24" fill="none" stroke="#D4A373" stroke-width="5" stroke-linecap="round"/>
+                        <path d="M74,38 Q84,28 72,24" fill="none" stroke="#D4A373" stroke-width="5" stroke-linecap="round"/>
+                        <ellipse cx="50" cy="58" rx="18" ry="15" fill="#FFE5D9"/>
+                        <circle cx="43" cy="56" r="3.5" fill="#5C4B51"/><circle cx="57" cy="56" r="3.5" fill="#5C4B51"/>
+                      </svg>`
+            },
+            {
+                id: 'lemonDragon',
+                name: '檸檬氣泡龍 (Lemon Drake)',
+                latin: 'Draco citreus',
+                tag: '稀有幻獸系 ★★★',
+                food: '酸甜檸檬果、星光蜂蜜露',
+                habit: '背上長著一對透明的檸檬黃小翅膀與小龍角，打噴嚏時會冒出柑橘香氛泡泡。',
+                desc: '古老傳說中守護小島星露結晶的迷你幼龍，雖然有著小龍角但性格像小貓一樣黏人。',
+                svg: `<svg viewBox="0 0 100 100" class="w-16 h-16">
+                        <polygon points="34,34 38,16 46,32" fill="#FFB703"/>
+                        <polygon points="66,34 62,16 54,32" fill="#FFB703"/>
+                        <ellipse cx="50" cy="58" rx="28" ry="26" fill="#FFF3B0" stroke="#FFD166" stroke-width="3"/>
+                        <circle cx="39" cy="55" r="4" fill="#5C4B51"/><circle cx="61" cy="55" r="4" fill="#5C4B51"/>
+                        <ellipse cx="50" cy="65" rx="12" ry="8" fill="#FFFFFF"/>
+                      </svg>`
+            },
+            {
+                id: 'berryHedgehog',
+                name: '莓果花刺蝟 (Berry Urchin)',
+                latin: 'Erinaceus fragaria',
+                tag: '害羞寶藏系 ★★',
+                food: '野生覆盆子、香脆松子',
+                habit: '背上的軟刺其實像粉紅莓果慕斯一樣柔軟，開心時會把撿到的亮晶晶小石頭送給旅人。',
+                desc: '喜歡在花圃邊緣探頭探腦的小刺蝟，背上點綴著草莓籽般的金黃斑點，完全不會扎手喔！',
+                svg: `<svg viewBox="0 0 100 100" class="w-16 h-16">
+                        <ellipse cx="50" cy="54" rx="33" ry="26" fill="#FF8FA3" stroke="#FF758F" stroke-width="3"/>
+                        <ellipse cx="50" cy="64" rx="24" ry="17" fill="#FFE5D9"/>
+                        <circle cx="41" cy="60" r="3.5" fill="#5C4B51"/><circle cx="59" cy="60" r="3.5" fill="#5C4B51"/>
+                        <circle cx="50" cy="65" r="3" fill="#5C4B51"/>
+                      </svg>`
+            }
+        ];
+
+        function populateEncyclopedia() {
+            const grid = document.getElementById('encyclopedia-grid');
+            grid.innerHTML = CREATURES_DATA.map(c => `
+                <div onclick="openCreatureDetail('${c.id}')" class="bg-white/85 hover:bg-white rounded-2xl p-4 border-2 border-pink-100 hover:border-pink-300 cursor-pointer transition flex items-center gap-4 shadow-xs">
+                    <div class="w-16 h-16 rounded-full bg-pink-50 flex items-center justify-center shrink-0">${c.svg}</div>
+                    <div class="text-left">
+                        <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-pink-100 text-pink-600">${c.tag}</span>
+                        <h4 class="font-black text-sm sm:text-base text-[#5C4B51] mt-1">${c.name}</h4>
+                        <p class="text-xs text-[#7A686E] line-clamp-1">${c.desc}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        /* ==========================================================================
+           3. Wayfinder 風格開場過場與電影式故事運鏡流程
+           ========================================================================== */
+        const CINEMATIC_CHAPTERS = [
+            {
+                badge: "序章 1 / 4 • 公元前 2000 年",
+                title: "迷霧彼端的微光之島",
+                text: "兩千年前，年輕的旅人 Nicole 駕著木帆船穿過終年不散的彩虹薄霧，首次踏上了這座漂浮在星露海面上的秘密島嶼⋯⋯",
+                camTheta: 0.45,
+                camPhi: 0.85,
+                camRadius: 16.5,
+                targetX: 0,
+                targetZ: 2.2
+            },
+            {
+                badge: "第二幕 2 / 4 • 初次相遇",
+                title: "草叢裡探出的圓滾眼睛",
+                text: "踏上柔軟草地後，雲朵麻糬團與星露小耳狐不但沒有逃跑，反而好奇地歪著頭，輕輕蹭了蹭旅人的靴子。",
+                camTheta: -0.65,
+                camPhi: 0.95,
+                camRadius: 12.5,
+                targetX: -1.4,
+                targetZ: 0.2
+            },
+            {
+                badge: "第三幕 3 / 4 • 信任的萌芽",
+                title: "第一顆香甜星露果",
+                text: "旅人從背包裡拿出剛採摘的紅潤星露果遞給牠們。小生物開心地咬了一口，頭頂瞬間綻放出溫暖的愛心微光！",
+                camTheta: 0.85,
+                camPhi: 0.92,
+                camRadius: 12.0,
+                targetX: 1.5,
+                targetZ: 0.5
+            },
+            {
+                badge: "終幕 4 / 4 • 共生新紀元",
+                title: "屬於你與寵物的永遠家園",
+                text: "人們在島上搭起蘑菇小屋與花圃，與這群治癒的小生物一起生活。現在，輪到你親自漫步這座小島了！",
+                camTheta: 0,
+                camPhi: 0.88,
+                camRadius: 14.8,
+                targetX: 0,
+                targetZ: 1.4
+            }
+        ];
+
+        let isCinematicMode = false;
+        let cineStep = 0;
+
+        function startCinematicStory() {
+            isCinematicMode = true;
+            cineStep = 0;
+            document.getElementById('explore-controls').classList.add('hidden');
+            document.getElementById('cinematic-story-bar').classList.remove('hidden');
+            applyCinematicChapter(0);
+        }
+
+        function applyCinematicChapter(idx) {
+            cineStep = idx;
+            const ch = CINEMATIC_CHAPTERS[idx];
+            playChime(['C5', 'E5', 'G5', 'B5'][idx]);
+
+            document.getElementById('cine-chapter-badge').textContent = ch.badge;
+            const titleEl = document.getElementById('cine-title');
+            const textEl = document.getElementById('cine-text');
+            titleEl.textContent = ch.title;
+            textEl.textContent = ch.text;
+
+            // 觸發字幕重新淡入動畫
+            textEl.classList.remove('subtitle-enter');
+            void textEl.offsetWidth;
+            textEl.classList.add('subtitle-enter');
+
+            // 電影式運鏡與角色自動走位
+            camOrbit.targetTheta = ch.camTheta;
+            camOrbit.targetPhi = ch.camPhi;
+            camOrbit.targetRadius = ch.camRadius;
+            playerState.targetX = ch.targetX;
+            playerState.targetZ = ch.targetZ;
+
+            // 若在第三幕自動投餵一顆星露果演繹劇情
+            if (idx === 2) {
+                interactFeed();
+            }
+
+            // 更新進度點
+            document.getElementById('cine-dots').innerHTML = CINEMATIC_CHAPTERS.map((_, i) => `
+                <span class="h-2 rounded-full transition-all ${i === idx ? 'bg-pink-400 w-6' : 'bg-pink-200 w-2'}"></span>
+            `).join('');
+
+            const nextBtn = document.getElementById('cine-next-btn');
+            if (idx === CINEMATIC_CHAPTERS.length - 1) {
+                nextBtn.innerHTML = '開始自由探索小島 <i class="fa-solid fa-sparkles ml-1"></i>';
+            } else {
+                nextBtn.innerHTML = '繼續旅程 <i class="fa-solid fa-arrow-right ml-1"></i>';
+            }
+        }
+
+        function advanceCinematicStory() {
+            if (cineStep < CINEMATIC_CHAPTERS.length - 1) {
+                applyCinematicChapter(cineStep + 1);
+            } else {
+                exitCinematicStory();
+            }
+        }
+
+        function exitCinematicStory() {
+            isCinematicMode = false;
+            document.getElementById('cinematic-story-bar').classList.add('hidden');
+            document.getElementById('explore-controls').classList.remove('hidden');
+            camOrbit.targetTheta = 0;
+            camOrbit.targetPhi = 0.88;
+            camOrbit.targetRadius = 22.5;
+            updateStatusToast('現在你可以自由操作角色，或直接用滑鼠按住小生物抓起來移動喔！');
+        }
+
+        /* ==========================================================================
+           4. 空間抽屜視窗控制
+           ========================================================================== */
+        function openDrawer(panelName) {
+            playChime('E5');
+            const backdrop = document.getElementById('spatial-modal-backdrop');
+            document.querySelectorAll('.drawer-panel').forEach(p => p.classList.add('hidden'));
+
+            if (panelName === 'ending') {
+                document.getElementById('ending-outfit-name').textContent = `當前造型：${OUTFITS[currentOutfitKey].name}`;
+                document.getElementById('ending-score').textContent = affinityScore;
+            }
+
+            const target = document.getElementById(`drawer-${panelName}`);
+            if (target) target.classList.remove('hidden');
+            backdrop.classList.remove('hidden');
+            backdrop.classList.add('flex');
+        }
+
+        function openCreatureDetail(id) {
+            const c = CREATURES_DATA.find(item => item.id === id);
+            if (!c) return;
+            playChime('G5');
+            document.getElementById('detail-avatar').innerHTML = c.svg;
+            document.getElementById('detail-tag').textContent = c.tag;
+            document.getElementById('detail-name').textContent = c.name;
+            document.getElementById('detail-latin').textContent = c.latin;
+            document.getElementById('detail-desc').textContent = c.desc;
+            document.getElementById('detail-food').textContent = c.food;
+            document.getElementById('detail-habit').textContent = c.habit;
+            openDrawer('creature-detail');
+        }
+
+        function closeDrawer() {
+            const backdrop = document.getElementById('spatial-modal-backdrop');
+            backdrop.classList.add('hidden');
+            backdrop.classList.remove('flex');
+        }
+
+        function closeDrawerOnBackdrop(e) {
+            if (e.target.id === 'spatial-modal-backdrop') closeDrawer();
+        }
+
+        /* ==========================================================================
+           4.5 四大功能小屋互動邏輯 (換裝室 / 泡泡澡堂 / 點心烘焙屋 / 星露圖書館)
+           ========================================================================== */
+        const COTTAGES_INFO = {
+            wardrobe: {
+                name: '🎀 蕾絲蝶結換裝小屋',
+                doorX: -5.4,
+                doorZ: -4.4,
+                camTheta: -0.65,
+                camPhi: 0.92,
+                camRadius: 15.5
+            },
+            bathhouse: {
+                name: '🛁 泡泡溫泉澡堂',
+                doorX: -5.2,
+                doorZ: 4.8,
+                camTheta: -2.2,
+                camPhi: 0.90,
+                camRadius: 15.5
+            },
+            bakery: {
+                name: '🧁 草莓點心烘焙屋',
+                doorX: 5.4,
+                doorZ: -3.2,
+                camTheta: 0.95,
+                camPhi: 0.92,
+                camRadius: 15.5
+            },
+            library: {
+                name: '🔮 星露占卜圖書館',
+                doorX: 5.0,
+                doorZ: 4.6,
+                camTheta: 2.35,
+                camPhi: 0.88,
+                camRadius: 16.0
+            }
+        };
+
+        // 走到指定功能小屋門口並開啟專屬功能介面
+        function visitCottage(cottageKey) {
+            const info = COTTAGES_INFO[cottageKey];
+            if (!info) return;
+
+            playerState.targetX = info.doorX;
+            playerState.targetZ = info.doorZ;
+            camOrbit.targetTheta = info.camTheta;
+            camOrbit.targetPhi = info.camPhi;
+            camOrbit.targetRadius = info.camRadius;
+
+            if (cottageKey === 'bathhouse') {
+                initBathhouseUI();
+            }
+
+            updateStatusToast(`歡迎來到「${info.name}」！`);
+            openDrawer(cottageKey);
+        }
+
+        // 功能 1：換裝室選擇造型
+        function selectWardrobeOutfit(key) {
+            changeOutfit(key);
+            playChime('B5');
+        }
+
+        // 功能 2：泡泡溫泉澡堂初始化與搓泡泡/沖洗互動
+        function initBathhouseUI() {
+            const select = document.getElementById('bath-pet-select');
+            if (!select) return;
+            const currentVal = select.value || (playerState.carryingPetId || 'mochi');
+            select.innerHTML = CREATURES_DATA.map(c =>
+                `<option value="${c.id}" ${c.id === currentVal ? 'selected' : ''}>${c.name}</option>`
+            ).join('');
+            updateBathPreview();
+        }
+
+        function updateBathPreview() {
+            const id = document.getElementById('bath-pet-select').value;
+            const c = CREATURES_DATA.find(item => item.id === id) || CREATURES_DATA[0];
+            document.getElementById('bath-pet-avatar').innerHTML = c.svg;
+        }
+
+        function washPetAction(mode) {
+            const id = document.getElementById('bath-pet-select').value;
+            const c = CREATURES_DATA.find(item => item.id === id) || CREATURES_DATA[0];
+            const avatar = document.getElementById('bath-pet-avatar');
+            const bubbleBox = document.getElementById('bath-bubbles-container');
+
+            // 彈跳動畫
+            avatar.style.transform = 'scale(1.2) translateY(-10px)';
+            setTimeout(() => { avatar.style.transform = 'scale(1) translateY(0)'; }, 350);
+
+            // 產生飄升泡泡與花瓣
+            bubbleBox.innerHTML = '';
+            const symbols = mode === 'bubbles' ? ['🫧', '🧼', '✨', '🫧'] : ['🌸', '💧', '💖', '✨'];
+            for (let i = 0; i < 10; i++) {
+                const b = document.createElement('span');
+                b.className = 'bath-bubble absolute text-xl';
+                b.textContent = symbols[i % symbols.length];
+                b.style.left = `${15 + Math.random() * 70}%`;
+                b.style.bottom = `${25 + Math.random() * 20}%`;
+                b.style.animationDelay = `${Math.random() * 0.4}s`;
+                bubbleBox.appendChild(b);
+            }
+
+            // 同步在 3D 場景的澡堂上方產生特效
+            const pet3D = petEntities.find(p => p.id === id);
+            if (pet3D) {
+                pet3D.x = COTTAGES_INFO.bathhouse.doorX + (Math.random() - 0.5) * 1.2;
+                pet3D.z = COTTAGES_INFO.bathhouse.doorZ + (Math.random() - 0.5) * 1.2;
+                pet3D.targetScale = 1.25;
+                setTimeout(() => { pet3D.targetScale = 1.0; }, 500);
+            }
+
+            playChime(mode === 'bubbles' ? 'G5' : 'B5');
+            addAffinity(7);
+            const actionText = mode === 'bubbles'
+                ? `幫「${c.name}」搓出好多綿密星露泡泡，舒服得瞇起眼睛了！`
+                : `用溫熱的花瓣泉水把「${c.name}」洗得香噴噴亮晶晶！`;
+            updateStatusToast(actionText);
+        }
+
+        // 功能 3：點心烘焙屋出爐並擺上 3D 草地
+        function bakeTreat(treatName, emoji, colorHex, bonusPts) {
+            closeDrawer();
+            const fx = Math.max(-ISLAND_RADIUS + 1.0, Math.min(ISLAND_RADIUS - 1.0, playerState.x + (Math.random() - 0.5) * 2.0));
+            const fz = Math.max(-ISLAND_RADIUS + 1.0, Math.min(ISLAND_RADIUS - 1.0, playerState.z + 1.1));
+
+            const treatGroup = new THREE.Group();
+            treatGroup.position.set(fx, 0.46, fz);
+            const plate = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.32, 0.26, 0.06, 16),
+                new THREE.MeshStandardMaterial({ color: 0xFFFDF7 })
+            );
+            const cake = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.22, 0.24, 0.22, 16),
+                new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.35 })
+            );
+            cake.position.y = 0.14;
+            const topping = new THREE.Mesh(
+                new THREE.SphereGeometry(0.08, 10, 10),
+                new THREE.MeshBasicMaterial({ color: 0xFFF59D })
+            );
+            topping.position.y = 0.28;
+            treatGroup.add(plate, cake, topping);
+            scene.add(treatGroup);
+
+            fruitMeshes.push({ mesh: treatGroup, x: fx, z: fz });
+            playChime('C5');
+            setTimeout(() => playChime('G5'), 120);
+            spawn3DFloatingFX(new THREE.Vector3(fx, 1.2, fz), emoji);
+            addAffinity(bonusPts);
+            updateStatusToast(`剛出爐的「${treatName}」香氣四溢，小生物們正飛奔過來享用！`);
+        }
+
+        // 功能 4：星露圖書館抽取今日幸運星語
+        const ISLAND_FORTUNES = [
+            { emoji: '🌸', title: '花海微風的祝福', desc: '今天在櫻花樹下抱起「櫻花垂耳兔」或「雲朵麻糬團」，會感受到滿滿的療癒能量喔！' },
+            { emoji: '✨', title: '星露結晶的指引', desc: '「星露小耳狐」與「檸檬氣泡龍」今天特別有活力，試著為牠們烘焙一份點心吧！' },
+            { emoji: '🫧', title: '清泉泡泡的奇蹟', desc: '帶小夥伴去「泡泡溫泉澡堂」洗個香噴噴的澡，親密度將會像彩虹泡泡一樣節節高升！' },
+            { emoji: '🍯', title: '甜蜜果實的約定', desc: '「蜂蜜琥珀熊」與「莓果花刺蝟」正期待著你的溫柔撫摸，快去草地上找牠們玩耍吧！' }
+        ];
+
+        function drawIslandFortune() {
+            const pick = ISLAND_FORTUNES[Math.floor(Math.random() * ISLAND_FORTUNES.length)];
+            document.getElementById('oracle-emoji').textContent = pick.emoji;
+            document.getElementById('oracle-title').textContent = pick.title;
+            document.getElementById('oracle-desc').textContent = pick.desc;
+            playChime('A5');
+            addAffinity(3);
+        }
+
+        /* ==========================================================================
+           5. 3D 繪本箱庭世界引擎 (Three.js 精緻角色、換裝與四種神秘小生物)
+           ========================================================================== */
+        const stageEl = document.getElementById('fullscreen-stage');
+
+        const OUTFITS = {
+            forest: {
+                name: '森林採集裝',
+                dress: 0x6BCB77, apron: 0xFFFDF7, cape: 0x4D96FF,
+                hat: 0xE6B87D, ribbon: 0xFF9AA2, hair: 0x6D4C41, shoes: 0x8D6E63,
+                accessory: 'strawHat'
+            },
+            pastel: {
+                name: '櫻花甜點裙',
+                dress: 0xFF9AA2, apron: 0xFFFFFF, cape: 0xFFB7B2,
+                hat: 0xFFFFFF, ribbon: 0xFF6B8B, hair: 0x8D6E63, shoes: 0xFF8FA3,
+                accessory: 'bunnyEars'
+            },
+            starlight: {
+                name: '星露魔法袍',
+                dress: 0x8E94F2, apron: 0xE0C3FC, cape: 0x5E60CE,
+                hat: 0x4A4E7C, ribbon: 0xFFF59D, hair: 0xF3E5AB, shoes: 0x4A4E7C,
+                accessory: 'witchHat'
+            },
+            sailor: {
+                name: '古典航海服',
+                dress: 0x4EA8DE, apron: 0xFFFFFF, cape: 0xF4A261,
+                hat: 0xFFFFFF, ribbon: 0xE63946, hair: 0x4A3B3E, shoes: 0x5C4B51,
+                accessory: 'beret'
+            }
+        };
+
+        let currentOutfitKey = 'forest';
+        let affinityScore = 35;
+
+        let scene, camera, renderer, raycaster, mouse;
+        let islandGroundMesh;
+        let floatingClouds = [], floatingSparkles = [];
+        let cottageHitMeshes = []; // 儲存 4 座功能小屋的點擊碰撞體
+        let playerGroup, playerParts = {};
+        let petEntities = [];
+        let fruitMeshes = [];
+
+        const camOrbit = {
+            theta: -1.2,
+            phi: 0.42,
+            radius: 38,
+            targetTheta: -0.8,
+            targetPhi: 0.42,
+            targetRadius: 38,
+            isDragging: false,
+            dragMoved: false,
+            prevX: 0,
+            prevY: 0
+        };
+
+        // 大幅擴大探索島嶼半徑 (從 6.8 擴大至 12.2)
+        const ISLAND_RADIUS = 12.2;
+        const playerState = {
+            x: 0,
+            z: 2.5,
+            targetX: 0,
+            targetZ: 2.5,
+            rotY: 0,
+            speed: 0.11,
+            walkPhase: 0,
+            carryingPetId: null
+        };
+
+        // 滑鼠直接抓取拖曳小生物的狀態
+        const mouseGrabState = {
+            activePet: null,
+            dragPlane: new THREE.Plane(new THREE.Vector3(0, 1, 0), -1.65),
+            intersectPoint: new THREE.Vector3(),
+            startX: 0,
+            startY: 0,
+            hasDragged: false
+        };
+
+        const keys = {};
+
+        /* ==========================================================================
+           初始化 Three.js 3D 場景與擴大版童話箱庭島嶼
+           ========================================================================== */
+        function initThreeScene() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0xFFEFF6, 0.014);
+
+            camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 160);
+            updateCameraPosition(true);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.outputEncoding = THREE.sRGBEncoding;
+
+            stageEl.innerHTML = '';
+            stageEl.appendChild(renderer.domElement);
+
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            // 溫暖繪本光影系統
+            const hemiLight = new THREE.HemisphereLight(0xFFFDF7, 0xB5EAD7, 0.95);
+            hemiLight.position.set(0, 28, 0);
+            scene.add(hemiLight);
+
+            const dirLight = new THREE.DirectionalLight(0xFFF3D6, 0.95);
+            dirLight.position.set(14, 24, 16);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            dirLight.shadow.camera.near = 2;
+            dirLight.shadow.camera.far = 65;
+            const d = 16;
+            dirLight.shadow.camera.left = -d;
+            dirLight.shadow.camera.right = d;
+            dirLight.shadow.camera.top = d;
+            dirLight.shadow.camera.bottom = -d;
+            scene.add(dirLight);
+
+            buildExpandedIslandScenery();
+            build3DPlayerCharacter();
+            build3DPets();
+            setupPointerControls();
+
+            window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
+            window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+        }
+
+        function buildExpandedIslandScenery() {
+            // 1. 擴大版漂浮箱庭主島嶼 (草地半徑 12.6)
+            const grassGeo = new THREE.CylinderGeometry(12.6, 12.2, 0.55, 64);
+            const grassMat = new THREE.MeshStandardMaterial({ color: 0xA8E6CF, roughness: 0.78 });
+            islandGroundMesh = new THREE.Mesh(grassGeo, grassMat);
+            islandGroundMesh.position.y = 0;
+            islandGroundMesh.receiveShadow = true;
+            scene.add(islandGroundMesh);
+
+            // 淺金色沙灘環帶
+            const sandGeo = new THREE.CylinderGeometry(13.4, 12.9, 0.42, 64);
+            const sandMat = new THREE.MeshStandardMaterial({ color: 0xFFF1C9, roughness: 0.85 });
+            const sandMesh = new THREE.Mesh(sandGeo, sandMat);
+            sandMesh.position.y = -0.1;
+            sandMesh.receiveShadow = true;
+            scene.add(sandMesh);
+
+            // 島嶼底部漂浮岩石底座
+            const rockGeo = new THREE.ConeGeometry(12.4, 7.5, 32);
+            const rockMat = new THREE.MeshStandardMaterial({ color: 0xD4A373, roughness: 0.9 });
+            const rockMesh = new THREE.Mesh(rockGeo, rockMat);
+            rockMesh.rotation.x = Math.PI;
+            rockMesh.position.y = -4.05;
+            scene.add(rockMesh);
+
+            // 夢幻星露海洋波紋環
+            const seaGeo = new THREE.RingGeometry(13.2, 46, 64);
+            const seaMat = new THREE.MeshBasicMaterial({
+                color: 0xBCE6FF, side: THREE.DoubleSide, transparent: true, opacity: 0.58
+            });
+            const seaMesh = new THREE.Mesh(seaGeo, seaMat);
+            seaMesh.rotation.x = -Math.PI / 2;
+            seaMesh.position.y = -0.25;
+            scene.add(seaMesh);
+
+            // 2. 四座各具特色的功能小屋 (可點擊進入專屬功能)
+            cottageHitMeshes = [];
+            buildFunctionalCottages();
+
+            // 3. 西側清泉大池塘與蓮葉
+            const pondGroup = new THREE.Group();
+            pondGroup.position.set(-8.6, 0.29, 0.5);
+            const pondWater = new THREE.Mesh(
+                new THREE.CircleGeometry(2.1, 32),
+                new THREE.MeshStandardMaterial({ color: 0x90E0EF, roughness: 0.15 })
+            );
+            pondWater.rotation.x = -Math.PI / 2;
+            const pondRim = new THREE.Mesh(
+                new THREE.TorusGeometry(2.12, 0.15, 10, 36),
+                new THREE.MeshStandardMaterial({ color: 0xE2ECE9, roughness: 0.85 })
+            );
+            pondRim.rotation.x = Math.PI / 2;
+            pondGroup.add(pondWater, pondRim);
+            scene.add(pondGroup);
+
+            // 4. 北側 2000 年前古代星露石拱門遺跡
+            const archGroup = new THREE.Group();
+            archGroup.position.set(0, 0.27, -8.8);
+            const stoneMat = new THREE.MeshStandardMaterial({ color: 0xD8E2DC, roughness: 0.85 });
+            const pillarL = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.42, 2.8, 12), stoneMat);
+            pillarL.position.set(-1.3, 1.4, 0);
+            pillarL.castShadow = true;
+            const pillarR = pillarL.clone();
+            pillarR.position.set(1.3, 1.4, 0);
+            const archTop = new THREE.Mesh(new THREE.TorusGeometry(1.3, 0.34, 12, 24, Math.PI), stoneMat);
+            archTop.position.set(0, 2.75, 0);
+            archTop.castShadow = true;
+            const archCrystal = new THREE.Mesh(
+                new THREE.OctahedronGeometry(0.28, 0),
+                new THREE.MeshStandardMaterial({ color: 0xFFF59D, emissive: 0xFFD166, emissiveIntensity: 0.7 })
+            );
+            archCrystal.position.set(0, 2.6, 0);
+            archGroup.add(pillarL, pillarR, archTop, archCrystal);
+            scene.add(archGroup);
+
+            // 5. 多層次櫻花樹與翡翠果樹林
+            create3DTree(-9.2, -3.5, 0xFFB7B2, 1.25);
+            create3DTree(3.2, -9.2, 0xFFDAC1, 1.15);
+            create3DTree(9.2, 1.2, 0x88D8B0, 1.25);
+            create3DTree(7.8, 7.2, 0xFFB7B2, 1.1);
+            create3DTree(-7.5, 7.8, 0x88D8B0, 1.15);
+            create3DTree(0.8, 9.5, 0xFF9AA2, 1.05);
+
+            // 6. 65 朵粉彩小花叢點綴廣闊草地
+            const flowerColors = [0xFF9AA2, 0xFFF59D, 0xC7CEEA, 0xFFFFFF, 0xFFDAC1];
+            const stemGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.25, 6);
+            const stemMat = new THREE.MeshStandardMaterial({ color: 0x6BCB77 });
+            const petalGeo = new THREE.SphereGeometry(0.11, 8, 8);
+            for (let i = 0; i < 65; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 2.0 + Math.random() * 9.8;
+                const fx = Math.cos(angle) * dist;
+                const fz = Math.sin(angle) * dist;
+                if (Math.hypot(fx + 8.6, fz - 0.5) < 2.4) continue;
+
+                const flower = new THREE.Group();
+                flower.position.set(fx, 0.27, fz);
+                const stem = new THREE.Mesh(stemGeo, stemMat);
+                stem.position.y = 0.12;
+                const head = new THREE.Mesh(
+                    petalGeo,
+                    new THREE.MeshStandardMaterial({ color: flowerColors[i % flowerColors.length] })
+                );
+                head.position.y = 0.25;
+                flower.add(stem, head);
+                scene.add(flower);
+            }
+
+            // 7. 環繞漂浮軟綿綿雲朵
+            const cloudMat = new THREE.MeshStandardMaterial({
+                color: 0xFFFFFF, roughness: 0.9, transparent: true, opacity: 0.92
+            });
+            for (let i = 0; i < 10; i++) {
+                const cloud = new THREE.Group();
+                const c1 = new THREE.Mesh(new THREE.SphereGeometry(1.0, 14, 14), cloudMat);
+                const c2 = new THREE.Mesh(new THREE.SphereGeometry(0.75, 12, 12), cloudMat);
+                c2.position.set(0.85, -0.12, 0.1);
+                const c3 = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 12), cloudMat);
+                c3.position.set(-0.8, -0.15, -0.1);
+                cloud.add(c1, c2, c3);
+
+                const angle = (i / 10) * Math.PI * 2;
+                const radius = 16.5 + (i % 3) * 3.5;
+                cloud.position.set(Math.cos(angle) * radius, 5.2 + (i % 3) * 1.8, Math.sin(angle) * radius);
+                cloud.userData = { angle, radius, speed: 0.001 + (i % 2) * 0.0005 };
+                scene.add(cloud);
+                floatingClouds.push(cloud);
+            }
+
+            // 星露微光粒子
+            const sparkGeo = new THREE.OctahedronGeometry(0.09, 0);
+            const sparkMat = new THREE.MeshBasicMaterial({ color: 0xFFF59D });
+            for (let i = 0; i < 45; i++) {
+                const sp = new THREE.Mesh(sparkGeo, sparkMat);
+                sp.position.set((Math.random() - 0.5) * 22, 0.8 + Math.random() * 4.5, (Math.random() - 0.5) * 22);
+                sp.userData = { baseY: sp.position.y, phase: Math.random() * Math.PI * 2 };
+                scene.add(sp);
+                floatingSparkles.push(sp);
+            }
+        }
+
+        /* ==========================================================================
+           建構 4 座各具專屬建築外觀與 3D 招牌的功能小屋
+           ========================================================================== */
+        function buildFunctionalCottages() {
+            // 1. 西北側：🎀 蕾絲蝶結換裝小屋 (Wardrobe Boutique)
+            const wardrobeHouse = new THREE.Group();
+            wardrobeHouse.position.set(-6.4, 0.27, -5.6);
+            wardrobeHouse.rotation.y = 0.65;
+            const wWall = new THREE.Mesh(
+                new THREE.CylinderGeometry(1.25, 1.38, 1.55, 24),
+                new THREE.MeshStandardMaterial({ color: 0xFFFDF7, roughness: 0.55 })
+            );
+            wWall.position.y = 0.78;
+            wWall.castShadow = true;
+            const wRoof = new THREE.Mesh(
+                new THREE.SphereGeometry(1.9, 24, 18, 0, Math.PI * 2, 0, Math.PI * 0.52),
+                new THREE.MeshStandardMaterial({ color: 0xFF8FA3, roughness: 0.45 })
+            );
+            wRoof.position.y = 1.45;
+            wRoof.castShadow = true;
+            // 屋頂立體蝴蝶結裝飾
+            const bowMat = new THREE.MeshStandardMaterial({ color: 0xFFF59D });
+            const bowL = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 12), bowMat);
+            bowL.scale.set(1.4, 0.8, 0.6);
+            bowL.position.set(-0.32, 3.35, 0.1);
+            const bowR = bowL.clone();
+            bowR.position.set(0.32, 3.35, 0.1);
+            const wDoor = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.95, 0.16), new THREE.MeshStandardMaterial({ color: 0xFFB7B2 }));
+            wDoor.position.set(0, 0.48, 1.32);
+            wardrobeHouse.add(wWall, wRoof, bowL, bowR, wDoor);
+            scene.add(wardrobeHouse);
+            registerCottageHitbox(wardrobeHouse, 'wardrobe');
+
+            // 2. 西南側：🛁 泡泡溫泉澡堂 (Bubble Spa House)
+            const bathHouse = new THREE.Group();
+            bathHouse.position.set(-6.2, 0.27, 5.8);
+            bathHouse.rotation.y = 2.35;
+            const bWall = new THREE.Mesh(
+                new THREE.CylinderGeometry(1.3, 1.4, 1.4, 24),
+                new THREE.MeshStandardMaterial({ color: 0xE0F7FA, roughness: 0.5 })
+            );
+            bWall.position.y = 0.7;
+            bWall.castShadow = true;
+            const bRoof = new THREE.Mesh(
+                new THREE.ConeGeometry(1.95, 1.5, 24),
+                new THREE.MeshStandardMaterial({ color: 0x4EA8DE, roughness: 0.45 })
+            );
+            bRoof.position.y = 2.1;
+            bRoof.castShadow = true;
+            // 門口露天溫泉木桶與浮動泡泡
+            const tub = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.65, 0.58, 0.52, 20),
+                new THREE.MeshStandardMaterial({ color: 0xBC8A5F, roughness: 0.7 })
+            );
+            tub.position.set(1.35, 0.26, 0.85);
+            const tubWater = new THREE.Mesh(
+                new THREE.CircleGeometry(0.58, 20),
+                new THREE.MeshBasicMaterial({ color: 0x90E0EF })
+            );
+            tubWater.rotation.x = -Math.PI / 2;
+            tubWater.position.set(1.35, 0.53, 0.85);
+            const bDoor = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.9, 0.16), new THREE.MeshStandardMaterial({ color: 0x90E0EF }));
+            bDoor.position.set(0, 0.45, 1.34);
+            bathHouse.add(bWall, bRoof, tub, tubWater, bDoor);
+            scene.add(bathHouse);
+            registerCottageHitbox(bathHouse, 'bathhouse');
+
+            // 3. 東北側：🧁 草莓點心烘焙屋 (Starlight Bakery)
+            const bakeryHouse = new THREE.Group();
+            bakeryHouse.position.set(6.5, 0.27, -4.4);
+            bakeryHouse.rotation.y = -0.75;
+            const kWall = new THREE.Mesh(
+                new THREE.BoxGeometry(2.2, 1.55, 2.0),
+                new THREE.MeshStandardMaterial({ color: 0xFFF3B0, roughness: 0.6 })
+            );
+            kWall.position.y = 0.78;
+            kWall.castShadow = true;
+            const kRoof = new THREE.Mesh(
+                new THREE.ConeGeometry(1.95, 1.45, 4),
+                new THREE.MeshStandardMaterial({ color: 0xF4A261, roughness: 0.5 })
+            );
+            kRoof.rotation.y = Math.PI / 4;
+            kRoof.position.y = 2.25;
+            kRoof.castShadow = true;
+            // 屋頂草莓甜甜圈招牌
+            const donut = new THREE.Mesh(
+                new THREE.TorusGeometry(0.36, 0.15, 12, 24),
+                new THREE.MeshStandardMaterial({ color: 0xFF8FA3 })
+            );
+            donut.position.set(0, 2.35, 1.15);
+            const kDoor = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.95, 0.16), new THREE.MeshStandardMaterial({ color: 0xBC8A5F }));
+            kDoor.position.set(0, 0.48, 1.02);
+            bakeryHouse.add(kWall, kRoof, donut, kDoor);
+            scene.add(bakeryHouse);
+            registerCottageHitbox(bakeryHouse, 'bakery');
+
+            // 4. 東南側：🔮 星露占卜圖書館 (Starlight Observatory)
+            const libraryTower = new THREE.Group();
+            libraryTower.position.set(6.0, 0.27, 5.6);
+            libraryTower.rotation.y = -2.35;
+            const lWall = new THREE.Mesh(
+                new THREE.CylinderGeometry(1.15, 1.35, 1.9, 20),
+                new THREE.MeshStandardMaterial({ color: 0xEDE7F6, roughness: 0.55 })
+            );
+            lWall.position.y = 0.95;
+            lWall.castShadow = true;
+            const lRoof = new THREE.Mesh(
+                new THREE.ConeGeometry(1.65, 1.9, 20),
+                new THREE.MeshStandardMaterial({ color: 0x7E57C2, roughness: 0.45 })
+            );
+            lRoof.position.y = 2.8;
+            lRoof.castShadow = true;
+            // 塔頂發光占卜水晶球
+            const orb = new THREE.Mesh(
+                new THREE.SphereGeometry(0.28, 16, 16),
+                new THREE.MeshStandardMaterial({ color: 0xFFF59D, emissive: 0xFFD166, emissiveIntensity: 0.85 })
+            );
+            orb.position.y = 3.9;
+            const lDoor = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.95, 0.16), new THREE.MeshStandardMaterial({ color: 0x5E35B1 }));
+            lDoor.position.set(0, 0.48, 1.28);
+            libraryTower.add(lWall, lRoof, orb, lDoor);
+            scene.add(libraryTower);
+            registerCottageHitbox(libraryTower, 'library');
+        }
+
+        function registerCottageHitbox(group, cottageKey) {
+            group.traverse(child => {
+                if (child.isMesh) {
+                    child.userData.cottageKey = cottageKey;
+                    cottageHitMeshes.push(child);
+                }
+            });
+        }
+
+        function create3DTree(x, z, foliageColor, scale = 1) {
+            const tree = new THREE.Group();
+            tree.position.set(x, 0.27, z);
+            tree.scale.setScalar(scale);
+
+            const trunk = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.18, 0.28, 1.4, 12),
+                new THREE.MeshStandardMaterial({ color: 0x8D6E63, roughness: 0.85 })
+            );
+            trunk.position.y = 0.7;
+            trunk.castShadow = true;
+
+            const foliageMat = new THREE.MeshStandardMaterial({ color: foliageColor, roughness: 0.65 });
+            const puff1 = new THREE.Mesh(new THREE.SphereGeometry(0.95, 18, 16), foliageMat);
+            puff1.position.set(0, 1.75, 0);
+            puff1.castShadow = true;
+            const puff2 = new THREE.Mesh(new THREE.SphereGeometry(0.72, 16, 14), foliageMat);
+            puff2.position.set(0.55, 1.48, 0.2);
+            puff2.castShadow = true;
+            const puff3 = new THREE.Mesh(new THREE.SphereGeometry(0.68, 16, 14), foliageMat);
+            puff3.position.set(-0.52, 1.52, -0.15);
+            puff3.castShadow = true;
+
+            tree.add(trunk, puff1, puff2, puff3);
+            scene.add(tree);
+        }
+
+        function build3DPlayerCharacter() {
+            if (playerGroup) scene.remove(playerGroup);
+            const outfit = OUTFITS[currentOutfitKey];
+
+            playerGroup = new THREE.Group();
+            playerGroup.position.set(playerState.x, 0.26, playerState.z);
+
+            const bodyPivot = new THREE.Group();
+            playerGroup.add(bodyPivot);
+
+            const skinMat = new THREE.MeshStandardMaterial({ color: 0xFFE5D9, roughness: 0.45 });
+            const hairMat = new THREE.MeshStandardMaterial({ color: outfit.hair, roughness: 0.55 });
+            const dressMat = new THREE.MeshStandardMaterial({ color: outfit.dress, roughness: 0.5 });
+            const apronMat = new THREE.MeshStandardMaterial({ color: outfit.apron, roughness: 0.45 });
+            const capeMat = new THREE.MeshStandardMaterial({ color: outfit.cape, roughness: 0.55 });
+            const hatMat = new THREE.MeshStandardMaterial({ color: outfit.hat, roughness: 0.5 });
+            const ribbonMat = new THREE.MeshStandardMaterial({ color: outfit.ribbon, roughness: 0.4 });
+            const shoeMat = new THREE.MeshStandardMaterial({ color: outfit.shoes, roughness: 0.6 });
+
+            // 雙腿與小皮鞋
+            const legL = new THREE.Group();
+            legL.position.set(-0.14, 0.42, 0);
+            const legMeshL = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.065, 0.34, 12), skinMat);
+            legMeshL.position.y = -0.16;
+            const shoeL = new THREE.Mesh(new THREE.SphereGeometry(0.095, 12, 10), shoeMat);
+            shoeL.scale.set(0.95, 0.75, 1.3);
+            shoeL.position.set(0, -0.34, 0.03);
+            legL.add(legMeshL, shoeL);
+
+            const legR = legL.clone();
+            legR.position.set(0.14, 0.42, 0);
+            bodyPivot.add(legL, legR);
+
+            // 蓬蓬洋裝裙擺、白色蕾絲邊與小圍裙
+            const skirt = new THREE.Mesh(new THREE.ConeGeometry(0.46, 0.66, 22), dressMat);
+            skirt.position.y = 0.68;
+            skirt.castShadow = true;
+            const lace = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.045, 10, 24), apronMat);
+            lace.rotation.x = Math.PI / 2;
+            lace.position.y = 0.36;
+            const apron = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.36, 0.48, 16, 1, false, -0.75, 1.5), apronMat);
+            apron.position.set(0, 0.64, 0.06);
+            bodyPivot.add(skirt, lace, apron);
+
+            // 小披肩與胸前蝴蝶結
+            const cape = new THREE.Mesh(new THREE.ConeGeometry(0.36, 0.32, 20), capeMat);
+            cape.position.y = 0.96;
+            const bowL = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 10), ribbonMat);
+            bowL.scale.set(1.3, 0.8, 0.5);
+            bowL.position.set(-0.07, 0.94, 0.26);
+            const bowR = bowL.clone();
+            bowR.position.set(0.07, 0.94, 0.26);
+            bodyPivot.add(cape, bowL, bowR);
+
+            // 背後小探險背包
+            const backpack = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.34, 0.18), new THREE.MeshStandardMaterial({ color: 0xBC8A5F }));
+            backpack.position.set(0, 0.76, -0.26);
+            bodyPivot.add(backpack);
+
+            // 雙手
+            const armL = new THREE.Group();
+            armL.position.set(-0.30, 0.92, 0);
+            const armMeshL = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.05, 0.32, 10), skinMat);
+            armMeshL.position.y = -0.15;
+            armL.add(armMeshL);
+            const armR = armL.clone();
+            armR.position.set(0.30, 0.92, 0);
+            bodyPivot.add(armL, armR);
+
+            // Q版大頭、水汪汪雙眼、腮紅與雙馬尾
+            const headGroup = new THREE.Group();
+            headGroup.position.set(0, 1.38, 0);
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.38, 24, 20), skinMat);
+            head.castShadow = true;
+            const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.40, 24, 18, 0, Math.PI * 2, 0, Math.PI * 0.62), hairMat);
+            hairCap.rotation.x = -0.18;
+            hairCap.position.set(0, 0.03, -0.02);
+
+            [-0.38, 0.38].forEach((tx, i) => {
+                const twinTail = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 14), hairMat);
+                twinTail.scale.set(0.85, 1.65, 0.85);
+                twinTail.position.set(tx, -0.12, -0.12);
+                twinTail.rotation.z = i === 0 ? 0.25 : -0.25;
+                headGroup.add(twinTail);
+            });
+
+            const eyeMat = new THREE.MeshStandardMaterial({ color: 0x4A3B3E });
+            const shineMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+            const blushMat = new THREE.MeshBasicMaterial({ color: 0xFF9AA2 });
+            [-0.13, 0.13].forEach(ex => {
+                const eye = new THREE.Mesh(new THREE.SphereGeometry(0.052, 12, 12), eyeMat);
+                eye.position.set(ex, -0.02, 0.35);
+                const shine = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 8), shineMat);
+                shine.position.set(ex + 0.015, 0.0, 0.395);
+                const blush = new THREE.Mesh(new THREE.SphereGeometry(0.048, 10, 10), blushMat);
+                blush.scale.set(1.2, 0.65, 0.4);
+                blush.position.set(ex * 1.45, -0.08, 0.33);
+                headGroup.add(eye, shine, blush);
+            });
+
+            // 造型專屬頭飾
+            if (outfit.accessory === 'strawHat') {
+                const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.60, 0.04, 24), hatMat);
+                brim.position.y = 0.28;
+                const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 0.22, 20), hatMat);
+                crown.position.y = 0.38;
+                const band = new THREE.Mesh(new THREE.CylinderGeometry(0.365, 0.365, 0.06, 20), ribbonMat);
+                band.position.y = 0.31;
+                headGroup.add(brim, crown, band);
+            } else if (outfit.accessory === 'bunnyEars') {
+                [-0.16, 0.16].forEach((ex, i) => {
+                    const ear = new THREE.Mesh(new THREE.SphereGeometry(0.08, 12, 12), hatMat);
+                    ear.scale.set(0.7, 2.5, 0.45);
+                    ear.position.set(ex, 0.52, 0);
+                    ear.rotation.z = i === 0 ? 0.15 : -0.15;
+                    headGroup.add(ear);
+                });
+            } else if (outfit.accessory === 'witchHat') {
+                const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.56, 0.58, 0.04, 24), hatMat);
+                brim.position.y = 0.28;
+                const cone = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.62, 20), hatMat);
+                cone.position.y = 0.58;
+                headGroup.add(brim, cone);
+            } else if (outfit.accessory === 'beret') {
+                const beret = new THREE.Mesh(new THREE.SphereGeometry(0.34, 18, 14), hatMat);
+                beret.scale.set(1.15, 0.45, 1.15);
+                beret.position.set(0.06, 0.35, -0.02);
+                beret.rotation.z = -0.18;
+                headGroup.add(beret);
+            }
+
+            headGroup.add(head, hairCap);
+            bodyPivot.add(headGroup);
+
+            scene.add(playerGroup);
+            playerParts = { bodyPivot, legL, legR, armL, armR };
+        }
+
+        /* ==========================================================================
+           建構 10 種完全不同物種的 3D 神秘小生物
+           ========================================================================== */
+        function build3DPets() {
+            petEntities.forEach(p => scene.remove(p.group));
+            petEntities = [];
+
+            const configs = [
+                { id: 'mochi', x: -3.2, z: -1.4 },
+                { id: 'starfox', x: 3.4, z: -1.6 },
+                { id: 'jelly', x: -3.6, z: 3.8 },
+                { id: 'owl', x: 3.2, z: 3.4 },
+                { id: 'sakuraBunny', x: -6.2, z: -2.2 },
+                { id: 'honeyBear', x: 5.8, z: -2.8 },
+                { id: 'coralTurtle', x: 5.2, z: 5.4 },
+                { id: 'cottonSheep', x: -1.8, z: -4.8 },
+                { id: 'lemonDragon', x: 2.2, z: -5.2 },
+                { id: 'berryHedgehog', x: -0.5, z: 6.2 }
+            ];
+
+            configs.forEach((cfg, idx) => {
+                const group = new THREE.Group();
+                group.position.set(cfg.x, 0.26, cfg.z);
+
+                const bodyGroup = new THREE.Group();
+                group.add(bodyGroup);
+
+                const eyeMat = new THREE.MeshStandardMaterial({ color: 0x4A3B3E, roughness: 0.2 });
+                const shineMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+                const blushMat = new THREE.MeshBasicMaterial({ color: 0xFF9AA2 });
+
+                let faceZ = 0.53;
+                let faceY = 0.50;
+
+                if (cfg.id === 'mochi') {
+                    // 1. 雲朵麻糬團
+                    const mat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.4 });
+                    const body = new THREE.Mesh(new THREE.SphereGeometry(0.55, 24, 20), mat);
+                    body.scale.set(1.15, 0.85, 1.05);
+                    body.position.y = 0.45;
+                    body.castShadow = true;
+                    bodyGroup.add(body);
+
+                    const leafMat = new THREE.MeshStandardMaterial({ color: 0x70E000, roughness: 0.5 });
+                    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.22, 8), leafMat);
+                    stem.position.y = 0.96;
+                    const leaf1 = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10), leafMat);
+                    leaf1.scale.set(1.5, 0.35, 0.8);
+                    leaf1.position.set(0.16, 1.06, 0);
+                    leaf1.rotation.z = 0.3;
+                    const leaf2 = leaf1.clone();
+                    leaf2.position.set(-0.14, 1.04, 0.05);
+                    leaf2.rotation.z = -0.35;
+                    bodyGroup.add(stem, leaf1, leaf2);
+
+                    const tail = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), mat);
+                    tail.position.set(0, 0.38, -0.56);
+                    bodyGroup.add(tail);
+
+                } else if (cfg.id === 'starfox') {
+                    // 2. 星露小耳狐
+                    faceZ = 0.52;
+                    const furMat = new THREE.MeshStandardMaterial({ color: 0xFFDAC1, roughness: 0.55 });
+                    const whiteMat = new THREE.MeshStandardMaterial({ color: 0xFFFDF7, roughness: 0.5 });
+                    const body = new THREE.Mesh(new THREE.SphereGeometry(0.52, 24, 20), furMat);
+                    body.scale.set(1.0, 0.95, 1.15);
+                    body.position.y = 0.48;
+                    body.castShadow = true;
+                    bodyGroup.add(body);
+
+                    const ruff = new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 16), whiteMat);
+                    ruff.position.set(0, 0.42, 0.24);
+                    bodyGroup.add(ruff);
+
+                    [-0.28, 0.28].forEach((ex, i) => {
+                        const ear = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.48, 14), furMat);
+                        ear.position.set(ex, 1.02, 0.05);
+                        ear.rotation.z = i === 0 ? 0.25 : -0.25;
+                        bodyGroup.add(ear);
+                    });
+
+                    const crystal = new THREE.Mesh(
+                        new THREE.OctahedronGeometry(0.13, 0),
+                        new THREE.MeshStandardMaterial({ color: 0xFFF59D, emissive: 0xFFD166, emissiveIntensity: 0.6 })
+                    );
+                    crystal.position.set(0, 0.78, 0.46);
+                    bodyGroup.add(crystal);
+
+                    const tail = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 16), furMat);
+                    tail.scale.set(0.9, 0.9, 1.5);
+                    tail.position.set(0, 0.55, -0.65);
+                    tail.rotation.x = 0.4;
+                    const tailTip = new THREE.Mesh(new THREE.SphereGeometry(0.20, 12, 12), whiteMat);
+                    tailTip.position.set(0, 0.68, -0.95);
+                    bodyGroup.add(tail, tailTip);
+
+                } else if (cfg.id === 'jelly') {
+                    // 3. 薄荷果凍獸
+                    const jellyMat = new THREE.MeshPhysicalMaterial({
+                        color: 0x9BF6FF, roughness: 0.15, transmission: 0.45, transparent: true, opacity: 0.88
+                    });
+                    const body = new THREE.Mesh(new THREE.SphereGeometry(0.56, 24, 20), jellyMat);
+                    body.scale.set(1.1, 0.92, 1.1);
+                    body.position.y = 0.46;
+                    body.castShadow = true;
+                    bodyGroup.add(body);
+
+                    const bubbleMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+                    [[-0.2, 0.6, 0.1, 0.09], [0.22, 0.55, -0.1, 0.07], [0, 0.78, 0, 0.11]].forEach(([bx, by, bz, r]) => {
+                        const b = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 10), bubbleMat);
+                        b.position.set(bx, by, bz);
+                        bodyGroup.add(b);
+                    });
+
+                } else if (cfg.id === 'owl') {
+                    // 4. 紫羅蘭絨絨梟
+                    faceY = 0.62;
+                    const owlMat = new THREE.MeshStandardMaterial({ color: 0xBDB2FF, roughness: 0.7 });
+                    const bellyMat = new THREE.MeshStandardMaterial({ color: 0xFFFDF7, roughness: 0.6 });
+                    const body = new THREE.Mesh(new THREE.SphereGeometry(0.54, 24, 20), owlMat);
+                    body.scale.set(1.05, 1.05, 0.98);
+                    body.position.y = 0.52;
+                    body.castShadow = true;
+                    bodyGroup.add(body);
+
+                    const belly = new THREE.Mesh(new THREE.SphereGeometry(0.40, 18, 16), bellyMat);
+                    belly.position.set(0, 0.44, 0.25);
+                    bodyGroup.add(belly);
+
+                    [-0.54, 0.54].forEach((wx, i) => {
+                        const wing = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 12), owlMat);
+                        wing.scale.set(0.45, 1.3, 0.8);
+                        wing.position.set(wx, 0.52, 0);
+                        wing.rotation.z = i === 0 ? 0.35 : -0.35;
+                        bodyGroup.add(wing);
+                    });
+
+                    [-0.25, 0.25].forEach((ex, i) => {
+                        const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.28, 10), owlMat);
+                        tuft.position.set(ex, 1.02, 0.05);
+                        tuft.rotation.z = i === 0 ? 0.3 : -0.3;
+                        bodyGroup.add(tuft);
+                    });
+                    const beak = new THREE.Mesh(
+                        new THREE.ConeGeometry(0.08, 0.16, 10),
+                        new THREE.MeshStandardMaterial({ color: 0xFFB703 })
+                    );
+                    beak.rotation.x = Math.PI / 2;
+                    beak.position.set(0, 0.52, 0.56);
+                    bodyGroup.add(beak);
+
+                } else if (cfg.id === 'sakuraBunny') {
+                    // 5. 櫻花垂耳兔
+                    faceY = 0.55;
+                    faceZ = 0.48;
+                    const furMat = new THREE.MeshStandardMaterial({ color: 0xFFFDF7, roughness: 0.5 });
+                    const pinkMat = new THREE.MeshStandardMaterial({ color: 0xFF9AA2, roughness: 0.45 });
+                    const body = new THREE.Mesh(new THREE.SphereGeometry(0.48, 24, 20), furMat);
+                    body.scale.set(0.98, 1.08, 0.98);
+                    body.position.y = 0.50;
+                    body.castShadow = true;
+                    bodyGroup.add(body);
+
+                    // 兩片長垂耳
+                    [-0.48, 0.48].forEach((ex, i) => {
+                        const ear = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 14), pinkMat);
+                        ear.scale.set(0.65, 2.2, 0.5);
+                        ear.position.set(ex, 0.52, 0.02);
+                        ear.rotation.z = i === 0 ? 0.32 : -0.32;
+                        bodyGroup.add(ear);
+                    });
+
+                    // 頭頂櫻花花冠
+                    for (let p = 0; p < 5; p++) {
+                        const a = (p / 5) * Math.PI * 2;
+                        const petal = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 10), pinkMat);
+                        petal.position.set(Math.cos(a) * 0.12, 1.02, Math.sin(a) * 0.12);
+                        bodyGroup.add(petal);
+                    }
+                    const flowerCore = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), new THREE.MeshBasicMaterial({ color: 0xFFF59D }));
+                    flowerCore.position.set(0, 1.04, 0);
+                    const tail = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 12), furMat);
+                    tail.position.set(0, 0.32, -0.48);
+                    bodyGroup.add(flowerCore, tail);
+
+                } else if (cfg.id === 'honeyBear') {
+                    // 6. 蜂蜜琥珀熊
+                    faceY = 0.56;
+                    faceZ = 0.50;
+                    const bearMat = new THREE.MeshStandardMaterial({ color: 0xE6B87D, roughness: 0.65 });
+                    const snoutMat = new THREE.MeshStandardMaterial({ color: 0xFFFDF7, roughness: 0.5 });
+                    const body = new THREE.Mesh(new THREE.SphereGeometry(0.53, 24, 20), bearMat);
+                    body.scale.set(1.06, 1.04, 1.0);
+                    body.position.y = 0.52;
+                    body.castShadow = true;
+                    bodyGroup.add(body);
+
+                    [-0.36, 0.36].forEach(ex => {
+                        const ear = new THREE.Mesh(new THREE.SphereGeometry(0.17, 14, 14), bearMat);
+                        ear.position.set(ex, 0.98, 0);
+                        bodyGroup.add(ear);
+                    });
+
+                    const snout = new THREE.Mesh(new THREE.SphereGeometry(0.20, 14, 14), snoutMat);
+                    snout.scale.set(1.2, 0.85, 0.7);
+                    snout.position.set(0, 0.46, 0.48);
+                    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 10), eyeMat);
+                    nose.position.set(0, 0.50, 0.61);
+                    bodyGroup.add(snout, nose);
+
+                } else if (cfg.id === 'coralTurtle') {
+                    // 7. 珊瑚星螺龜
+                    faceY = 0.34;
+                    faceZ = 0.66;
+                    const shellMat = new THREE.MeshStandardMaterial({ color: 0xFF8FA3, roughness: 0.45 });
+                    const skinMat = new THREE.MeshStandardMaterial({ color: 0x95D5B2, roughness: 0.6 });
+                    const shell = new THREE.Mesh(new THREE.SphereGeometry(0.56, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.55), shellMat);
+                    shell.position.y = 0.28;
+                    shell.castShadow = true;
+                    bodyGroup.add(shell);
+
+                    // 龜殼金黃邊緣與頂部迷你海星
+                    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.54, 0.06, 10, 24), new THREE.MeshStandardMaterial({ color: 0xFFF3B0 }));
+                    rim.rotation.x = Math.PI / 2;
+                    rim.position.y = 0.28;
+                    const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.14, 0), new THREE.MeshStandardMaterial({ color: 0xFFD166 }));
+                    star.position.set(0, 0.86, 0);
+                    bodyGroup.add(rim, star);
+
+                    // 探出的小烏龜頭與四隻小腳
+                    const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 16), skinMat);
+                    head.position.set(0, 0.34, 0.54);
+                    bodyGroup.add(head);
+                    [[-0.42, 0.35], [0.42, 0.35], [-0.42, -0.35], [0.42, -0.35]].forEach(([fx, fz]) => {
+                        const fin = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 10), skinMat);
+                        fin.scale.set(1.2, 0.6, 1.2);
+                        fin.position.set(fx, 0.16, fz);
+                        bodyGroup.add(fin);
+                    });
+
+                } else if (cfg.id === 'cottonSheep') {
+                    // 8. 棉花糖雲羊
+                    faceY = 0.52;
+                    faceZ = 0.52;
+                    const woolMat = new THREE.MeshStandardMaterial({ color: 0xFFFDF7, roughness: 0.85 });
+                    const faceMat = new THREE.MeshStandardMaterial({ color: 0xFFE5D9, roughness: 0.5 });
+                    const hornMat = new THREE.MeshStandardMaterial({ color: 0xD4A373, roughness: 0.6 });
+
+                    // 蓬鬆羊毛球組合
+                    [[0, 0.52, 0, 0.50], [-0.28, 0.55, -0.1, 0.34], [0.28, 0.55, -0.1, 0.34], [0, 0.78, -0.05, 0.34], [0, 0.48, -0.32, 0.35]].forEach(([wx, wy, wz, r]) => {
+                        const puff = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 16), woolMat);
+                        puff.position.set(wx, wy, wz);
+                        puff.castShadow = true;
+                        bodyGroup.add(puff);
+                    });
+
+                    const face = new THREE.Mesh(new THREE.SphereGeometry(0.32, 18, 18), faceMat);
+                    face.position.set(0, 0.50, 0.34);
+                    bodyGroup.add(face);
+
+                    [-0.32, 0.32].forEach((hx, i) => {
+                        const horn = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.045, 8, 16, Math.PI * 1.2), hornMat);
+                        horn.position.set(hx, 0.78, 0.18);
+                        horn.rotation.y = i === 0 ? 0.5 : -0.5;
+                        bodyGroup.add(horn);
+                    });
+
+                } else if (cfg.id === 'lemonDragon') {
+                    // 9. 檸檬氣泡龍
+                    faceY = 0.56;
+                    faceZ = 0.50;
+                    const dragonMat = new THREE.MeshStandardMaterial({ color: 0xFFF3B0, roughness: 0.45 });
+                    const hornMat = new THREE.MeshStandardMaterial({ color: 0xFFB703, roughness: 0.4 });
+                    const wingMat = new THREE.MeshPhysicalMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.75, roughness: 0.2 });
+
+                    const body = new THREE.Mesh(new THREE.SphereGeometry(0.50, 24, 20), dragonMat);
+                    body.scale.set(0.95, 1.12, 1.05);
+                    body.position.y = 0.54;
+                    body.castShadow = true;
+                    bodyGroup.add(body);
+
+                    [-0.20, 0.20].forEach((hx, i) => {
+                        const horn = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.28, 10), hornMat);
+                        horn.position.set(hx, 1.08, 0.08);
+                        horn.rotation.z = i === 0 ? 0.22 : -0.22;
+                        bodyGroup.add(horn);
+                    });
+
+                    [-0.46, 0.46].forEach((wx, i) => {
+                        const wing = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.42, 6), wingMat);
+                        wing.position.set(wx, 0.65, -0.15);
+                        wing.rotation.z = i === 0 ? 1.1 : -1.1;
+                        bodyGroup.add(wing);
+                    });
+
+                    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.65, 12), dragonMat);
+                    tail.rotation.x = -Math.PI / 2.4;
+                    tail.position.set(0, 0.36, -0.62);
+                    bodyGroup.add(tail);
+
+                } else if (cfg.id === 'berryHedgehog') {
+                    // 10. 莓果花刺蝟
+                    faceY = 0.42;
+                    faceZ = 0.56;
+                    const berryMat = new THREE.MeshStandardMaterial({ color: 0xFF758F, roughness: 0.6 });
+                    const bellyMat = new THREE.MeshStandardMaterial({ color: 0xFFE5D9, roughness: 0.5 });
+                    const seedMat = new THREE.MeshBasicMaterial({ color: 0xFFF3B0 });
+
+                    const back = new THREE.Mesh(new THREE.SphereGeometry(0.54, 24, 20), berryMat);
+                    back.scale.set(1.08, 0.92, 1.12);
+                    back.position.set(0, 0.46, -0.05);
+                    back.castShadow = true;
+                    bodyGroup.add(back);
+
+                    // 背上的金黃莓果籽小刺點
+                    [[-0.25, 0.82, -0.1], [0.25, 0.82, -0.1], [0, 0.94, -0.15], [-0.38, 0.58, -0.25], [0.38, 0.58, -0.25], [0, 0.68, -0.52]].forEach(([sx, sy, sz]) => {
+                        const seed = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.14, 8), seedMat);
+                        seed.position.set(sx, sy, sz);
+                        bodyGroup.add(seed);
+                    });
+
+                    const face = new THREE.Mesh(new THREE.SphereGeometry(0.36, 18, 18), bellyMat);
+                    face.position.set(0, 0.40, 0.32);
+                    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 10), eyeMat);
+                    nose.position.set(0, 0.42, 0.68);
+                    bodyGroup.add(face, nose);
+                }
+
+                // 統一繪製萌萌水汪汪雙眼與腮紅
+                const eyeSpread = cfg.id === 'coralTurtle' ? 0.11 : 0.18;
+                [-eyeSpread, eyeSpread].forEach(ex => {
+                    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.062, 12, 12), eyeMat);
+                    eye.position.set(ex, faceY, faceZ);
+                    const shine = new THREE.Mesh(new THREE.SphereGeometry(0.024, 8, 8), shineMat);
+                    shine.position.set(ex + 0.018, faceY + 0.022, faceZ + 0.05);
+                    const blush = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 10), blushMat);
+                    blush.scale.set(1.2, 0.7, 0.4);
+                    blush.position.set(ex * 1.45, faceY - 0.07, faceZ - 0.03);
+                    bodyGroup.add(eye, shine, blush);
+                });
+
+                scene.add(group);
+                petEntities.push({
+                    id: cfg.id,
+                    group: group,
+                    bodyGroup: bodyGroup,
+                    x: cfg.x,
+                    z: cfg.z,
+                    vx: (Math.random() - 0.5) * 0.03,
+                    vz: (Math.random() - 0.5) * 0.03,
+                    timer: 100 + idx * 25,
+                    bouncePhase: idx * 1.1,
+                    targetScale: 1
+                });
+            });
+        }
+
+        function updateCameraPosition(instant = false) {
+            if (instant) {
+                camOrbit.theta = camOrbit.targetTheta;
+                camOrbit.phi = camOrbit.targetPhi;
+                camOrbit.radius = camOrbit.targetRadius;
+            } else {
+                camOrbit.theta += (camOrbit.targetTheta - camOrbit.theta) * 0.08;
+                camOrbit.phi += (camOrbit.targetPhi - camOrbit.phi) * 0.08;
+                camOrbit.radius += (camOrbit.targetRadius - camOrbit.radius) * 0.08;
+            }
+
+            camera.position.x = camOrbit.radius * Math.sin(camOrbit.phi) * Math.sin(camOrbit.theta);
+            camera.position.y = camOrbit.radius * Math.cos(camOrbit.phi);
+            camera.position.z = camOrbit.radius * Math.sin(camOrbit.phi) * Math.cos(camOrbit.theta);
+            camera.lookAt(0, 0.7, 0);
+        }
+
+        function resetCameraView() {
+            camOrbit.targetTheta = 0;
+            camOrbit.targetPhi = 0.88;
+            camOrbit.targetRadius = 22.5;
+            playChime('G5');
+        }
+
+        /* ==========================================================================
+           滑鼠指標互動：支援直接點擊/拖曳抓起寵物、移動與放下！
+           ========================================================================== */
+        function setupPointerControls() {
+            const dom = renderer.domElement;
+
+            dom.addEventListener('pointerdown', (e) => {
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+
+                // 1. 優先檢測是否直接點擊到 10 隻寵物中的任何一隻
+                if (!isCinematicMode) {
+                    for (const pet of petEntities) {
+                        const hits = raycaster.intersectObjects(pet.group.children, true);
+                        if (hits.length > 0) {
+                            mouseGrabState.activePet = pet;
+                            mouseGrabState.startX = e.clientX;
+                            mouseGrabState.startY = e.clientY;
+                            mouseGrabState.hasDragged = false;
+                            stageEl.classList.add('cursor-grabbing-pet');
+
+                            // 抓起時的Q彈動畫與音效
+                            pet.targetScale = 1.22;
+                            playChime('G5');
+                            const info = CREATURES_DATA.find(c => c.id === pet.id);
+                            spawn3DFloatingFX(new THREE.Vector3(pet.x, 1.8, pet.z), '✨💕');
+                            updateStatusToast(`抓起「${info.name}」囉！拖曳滑鼠可移動牠的位置，放開即可放下～`);
+                            return;
+                        }
+                    }
+                }
+
+                // 2. 若沒點到寵物，則啟動鏡頭旋轉拖曳
+                camOrbit.isDragging = true;
+                camOrbit.dragMoved = false;
+                camOrbit.prevX = e.clientX;
+                camOrbit.prevY = e.clientY;
+            });
+
+            window.addEventListener('pointermove', (e) => {
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                // 情況 A：正在用滑鼠抓著寵物拖曳移動
+                if (mouseGrabState.activePet) {
+                    const pet = mouseGrabState.activePet;
+                    if (Math.hypot(e.clientX - mouseGrabState.startX, e.clientY - mouseGrabState.startY) > 5) {
+                        mouseGrabState.hasDragged = true;
+                    }
+                    raycaster.setFromCamera(mouse, camera);
+                    if (raycaster.ray.intersectPlane(mouseGrabState.dragPlane, mouseGrabState.intersectPoint)) {
+                        let nx = mouseGrabState.intersectPoint.x;
+                        let nz = mouseGrabState.intersectPoint.z;
+                        // 限制在小島草地範圍內
+                        const dist = Math.hypot(nx, nz);
+                        if (dist > ISLAND_RADIUS - 0.5) {
+                            nx = (nx / dist) * (ISLAND_RADIUS - 0.5);
+                            nz = (nz / dist) * (ISLAND_RADIUS - 0.5);
+                        }
+                        pet.x = nx;
+                        pet.z = nz;
+                    }
+                    return;
+                }
+
+                // 情況 B：正在旋轉 3D 鏡頭
+                if (camOrbit.isDragging) {
+                    const dx = e.clientX - camOrbit.prevX;
+                    const dy = e.clientY - camOrbit.prevY;
+                    if (Math.hypot(dx, dy) > 5) camOrbit.dragMoved = true;
+
+                    camOrbit.targetTheta -= dx * 0.008;
+                    camOrbit.targetPhi = Math.max(0.42, Math.min(1.28, camOrbit.targetPhi - dy * 0.006));
+                    camOrbit.prevX = e.clientX;
+                    camOrbit.prevY = e.clientY;
+                }
+
+                // 情況 C：懸停偵測（滑鼠移到寵物或功能小屋身上變手型提示）
+                if (!isCinematicMode && document.getElementById('intro-curtain').classList.contains('curtain-hidden')) {
+                    raycaster.setFromCamera(mouse, camera);
+                    let hoveringInteractive = false;
+                    for (const pet of petEntities) {
+                        if (raycaster.intersectObjects(pet.group.children, true).length > 0) {
+                            hoveringInteractive = true;
+                            break;
+                        }
+                    }
+                    if (!hoveringInteractive && raycaster.intersectObjects(cottageHitMeshes, false).length > 0) {
+                        hoveringInteractive = true;
+                    }
+                    stageEl.classList.toggle('cursor-pointer-pet', hoveringInteractive);
+                }
+            });
+
+            window.addEventListener('pointerup', (e) => {
+                // 放開滑鼠抓起的寵物
+                if (mouseGrabState.activePet) {
+                    const pet = mouseGrabState.activePet;
+                    const info = CREATURES_DATA.find(c => c.id === pet.id);
+                    pet.targetScale = 1.0;
+                    stageEl.classList.remove('cursor-grabbing-pet');
+
+                    if (mouseGrabState.hasDragged) {
+                        // 拖曳移動後輕輕放回草地
+                        playChime('C5');
+                        addAffinity(4);
+                        spawn3DFloatingFX(new THREE.Vector3(pet.x, 1.3, pet.z), '🍃');
+                        updateStatusToast(`你把「${info.name}」輕輕放在新草地上啦！`);
+                    } else {
+                        // 單純點擊（未拖曳）則給予親密撫摸反應，並讓玩家人物走過去
+                        playChime('E5');
+                        addAffinity(5);
+                        spawn3DFloatingFX(new THREE.Vector3(pet.x, 1.5, pet.z), '💖');
+                        playerState.targetX = Math.max(-ISLAND_RADIUS + 0.8, Math.min(ISLAND_RADIUS - 0.8, pet.x + 1.0));
+                        playerState.targetZ = Math.max(-ISLAND_RADIUS + 0.8, Math.min(ISLAND_RADIUS - 0.8, pet.z + 1.0));
+                        updateStatusToast(`你抓起並摸了摸「${info.name}」！（提示：按住滑鼠拖曳可移動牠，雙擊可看圖鑑）`);
+                    }
+
+                    mouseGrabState.activePet = null;
+                    return;
+                }
+
+                if (!camOrbit.isDragging) return;
+                camOrbit.isDragging = false;
+                if (!camOrbit.dragMoved && e.target === dom && !isCinematicMode) {
+                    handle3DSceneClick(e.clientX, e.clientY);
+                }
+            });
+
+            // 雙擊寵物開啟詳細圖鑑介紹
+            dom.addEventListener('dblclick', (e) => {
+                if (isCinematicMode) return;
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                for (const pet of petEntities) {
+                    if (raycaster.intersectObjects(pet.group.children, true).length > 0) {
+                        openCreatureDetail(pet.id);
+                        return;
+                    }
+                }
+            });
+
+            window.addEventListener('wheel', (e) => {
+                // 若還在開場序幕畫面，滑鼠滾輪會驅動「跟著滾輪捲動的故事動畫」與 3D 鏡頭俯衝推近
+                if (isIntroCurtainActive()) {
+                    e.preventDefault();
+                    const delta = Math.sign(e.deltaY) * Math.min(0.085, Math.max(0.035, Math.abs(e.deltaY) * 0.00055));
+                    updateScrollPrologue(delta);
+                    return;
+                }
+
+                if (!document.getElementById('spatial-modal-backdrop').classList.contains('hidden')) return;
+                camOrbit.targetRadius = Math.max(10.5, Math.min(34, camOrbit.targetRadius + e.deltaY * 0.012));
+            }, { passive: false });
+
+            // 支援手機/觸控板在開場畫面上下滑動推進故事動畫
+            const introCurtainEl = document.getElementById('intro-curtain');
+            introCurtainEl.addEventListener('touchstart', (e) => {
+                if (e.touches.length > 0) introTouchStartY = e.touches[0].clientY;
+            }, { passive: true });
+
+            introCurtainEl.addEventListener('touchmove', (e) => {
+                if (!isIntroCurtainActive() || e.touches.length === 0) return;
+                const currentY = e.touches[0].clientY;
+                const dy = introTouchStartY - currentY;
+                introTouchStartY = currentY;
+                updateScrollPrologue(dy * 0.0025);
+            }, { passive: true });
+        }
+
+        function handle3DSceneClick(clientX, clientY) {
+            mouse.x = (clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            // 優先檢測是否點擊到 4 座特色功能小屋
+            const cottageHits = raycaster.intersectObjects(cottageHitMeshes, false);
+            if (cottageHits.length > 0) {
+                const key = cottageHits[0].object.userData.cottageKey;
+                if (key) {
+                    visitCottage(key);
+                    return;
+                }
+            }
+
+            const groundHits = raycaster.intersectObject(islandGroundMesh);
+            if (groundHits.length > 0) {
+                const pt = groundHits[0].point;
+                if (Math.hypot(pt.x, pt.z) <= ISLAND_RADIUS) {
+                    playerState.targetX = pt.x;
+                    playerState.targetZ = pt.z;
+                    spawn3DFloatingFX(new THREE.Vector3(pt.x, 0.5, pt.z), '✨');
+                } else {
+                    updateStatusToast('那是小島外圍的迷霧海浪喔，請在草地上散步吧！');
+                }
+            }
+        }
+
+        function spawn3DFloatingFX(worldPos, emoji) {
+            const projected = worldPos.clone().project(camera);
+            const x = (projected.x * 0.5 + 0.5) * window.innerWidth;
+            const y = (-projected.y * 0.5 + 0.5) * window.innerHeight;
+
+            const el = document.createElement('div');
+            el.className = 'floating-3d-fx';
+            el.textContent = emoji;
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 1250);
+        }
+
+        function changeOutfit(key) {
+            currentOutfitKey = key;
+            playChime('G5');
+            build3DPlayerCharacter();
+            spawn3DFloatingFX(new THREE.Vector3(playerState.x, 2.2, playerState.z), '🌸✨');
+            updateStatusToast(`已換上「${OUTFITS[key].name}」！`);
+
+            document.querySelectorAll('.outfit-btn').forEach(btn => {
+                btn.classList.remove('bg-emerald-100', 'bg-pink-100', 'bg-indigo-100', 'bg-amber-100', 'border-pink-400', 'border-emerald-400');
+                btn.classList.add('border-transparent');
+            });
+            const activeBtn = document.getElementById(`outfit-${key}`);
+            activeBtn.classList.remove('border-transparent');
+            activeBtn.classList.add('bg-pink-100', 'border-pink-400');
+        }
+
+        function getNearestPet(maxDist = 2.6) {
+            let nearest = null;
+            let minD = maxDist;
+            for (const pet of petEntities) {
+                if (pet.id === playerState.carryingPetId) return pet;
+                const d = Math.hypot(pet.x - playerState.x, pet.z - playerState.z);
+                if (d < minD) { minD = d; nearest = pet; }
+            }
+            return nearest;
+        }
+
+        function interactPet() {
+            const pet = getNearestPet(2.8);
+            if (!pet) {
+                updateStatusToast('附近沒有小生物喔！先走近牠們身邊再摸摸吧～');
+                return;
+            }
+            playChime('E5');
+            setTimeout(() => playChime('A5'), 100);
+            pet.targetScale = 1.28;
+            setTimeout(() => pet.targetScale = 1, 350);
+
+            const info = CREATURES_DATA.find(c => c.id === pet.id);
+            spawn3DFloatingFX(new THREE.Vector3(pet.x, 1.6, pet.z), '💖');
+            addAffinity(5);
+            updateStatusToast(`你溫柔地摸了摸「${info.name}」，牠開心地蹦蹦跳跳！`);
+        }
+
+        function interactPickUp() {
+            if (playerState.carryingPetId) {
+                const pet = petEntities.find(p => p.id === playerState.carryingPetId);
+                const info = CREATURES_DATA.find(c => c.id === pet.id);
+                pet.x = playerState.x + Math.sin(playerState.rotY) * 0.9;
+                pet.z = playerState.z + Math.cos(playerState.rotY) * 0.9;
+                playerState.carryingPetId = null;
+                playChime('C5');
+                spawn3DFloatingFX(new THREE.Vector3(pet.x, 1.2, pet.z), '🍃');
+                updateStatusToast(`你輕輕把「${info.name}」放回柔軟的草地上了。`);
+                return;
+            }
+
+            const pet = getNearestPet(2.8);
+            if (!pet) {
+                updateStatusToast('靠近小生物後，就可以把牠們抱起來囉！');
+                return;
+            }
+            playerState.carryingPetId = pet.id;
+            const info = CREATURES_DATA.find(c => c.id === pet.id);
+            playChime('G5');
+            spawn3DFloatingFX(new THREE.Vector3(playerState.x, 2.3, playerState.z), '✨💕');
+            addAffinity(8);
+            updateStatusToast(`你把「${info.name}」高高抱起來了！軟綿綿的好治癒～`);
+        }
+
+        function interactFeed() {
+            const fx = Math.max(-ISLAND_RADIUS + 0.8, Math.min(ISLAND_RADIUS - 0.8, playerState.x + Math.sin(playerState.rotY) * 1.2));
+            const fz = Math.max(-ISLAND_RADIUS + 0.8, Math.min(ISLAND_RADIUS - 0.8, playerState.z + Math.cos(playerState.rotY) * 1.2));
+
+            const fruitGroup = new THREE.Group();
+            fruitGroup.position.set(fx, 0.45, fz);
+            const berry = new THREE.Mesh(
+                new THREE.SphereGeometry(0.22, 14, 14),
+                new THREE.MeshStandardMaterial({ color: 0xFF4D6D, roughness: 0.3 })
+            );
+            const leaf = new THREE.Mesh(
+                new THREE.ConeGeometry(0.14, 0.12, 6),
+                new THREE.MeshStandardMaterial({ color: 0x70E000 })
+            );
+            leaf.position.y = 0.22;
+            fruitGroup.add(berry, leaf);
+            scene.add(fruitGroup);
+
+            fruitMeshes.push({ mesh: fruitGroup, x: fx, z: fz });
+            playChime('F5');
+            spawn3DFloatingFX(new THREE.Vector3(fx, 1.0, fz), '🍓');
+            updateStatusToast('你在草地上放了一顆香甜星露果，小生物們聞香跑過來啦！');
+        }
+
+        function inspectNearestCreature() {
+            const pet = getNearestPet(15) || petEntities[0];
+            openCreatureDetail(pet.id);
+        }
+
+        function addAffinity(pts) {
+            affinityScore = Math.min(100, affinityScore + pts);
+            document.getElementById('affinity-score').textContent = affinityScore;
+            document.getElementById('affinity-bar').style.width = `${affinityScore}%`;
+        }
+
+        function updateStatusToast(msg) {
+            document.getElementById('status-text').textContent = msg;
+        }
+
+        function update3DWorld() {
+            let moveX = 0, moveZ = 0;
+            if (!isCinematicMode) {
+                if (keys['arrowleft'] || keys['a']) moveX -= 1;
+                if (keys['arrowright'] || keys['d']) moveX += 1;
+                if (keys['arrowup'] || keys['w']) moveZ -= 1;
+                if (keys['arrowdown'] || keys['s']) moveZ += 1;
+            }
+
+            let isMoving = false;
+            if (moveX !== 0 || moveZ !== 0) {
+                const sinT = Math.sin(camOrbit.theta);
+                const cosT = Math.cos(camOrbit.theta);
+                const worldDx = moveX * cosT + moveZ * sinT;
+                const worldDz = -moveX * sinT + moveZ * cosT;
+                const len = Math.hypot(worldDx, worldDz);
+
+                const nextX = playerState.x + (worldDx / len) * playerState.speed;
+                const nextZ = playerState.z + (worldDz / len) * playerState.speed;
+                if (Math.hypot(nextX, nextZ) <= ISLAND_RADIUS) {
+                    playerState.x = nextX;
+                    playerState.z = nextZ;
+                }
+                playerState.targetX = playerState.x;
+                playerState.targetZ = playerState.z;
+                playerState.rotY = Math.atan2(worldDx, worldDz);
+                isMoving = true;
+            } else {
+                const dx = playerState.targetX - playerState.x;
+                const dz = playerState.targetZ - playerState.z;
+                const dist = Math.hypot(dx, dz);
+                if (dist > 0.08) {
+                    playerState.x += (dx / dist) * playerState.speed;
+                    playerState.z += (dz / dist) * playerState.speed;
+                    playerState.rotY = Math.atan2(dx, dz);
+                    isMoving = true;
+                }
+            }
+
+            playerGroup.position.set(playerState.x, 0.26, playerState.z);
+            let angleDiff = playerState.rotY - playerGroup.rotation.y;
+            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+            playerGroup.rotation.y += angleDiff * 0.18;
+
+            if (isMoving) {
+                playerState.walkPhase += 0.22;
+                playerParts.bodyPivot.position.y = Math.abs(Math.sin(playerState.walkPhase)) * 0.09;
+                playerParts.legL.rotation.x = Math.sin(playerState.walkPhase) * 0.45;
+                playerParts.legR.rotation.x = -Math.sin(playerState.walkPhase) * 0.45;
+                if (!playerState.carryingPetId) {
+                    playerParts.armL.rotation.x = -Math.sin(playerState.walkPhase) * 0.35;
+                    playerParts.armR.rotation.x = Math.sin(playerState.walkPhase) * 0.35;
+                }
+            } else {
+                playerParts.bodyPivot.position.y *= 0.8;
+                playerParts.legL.rotation.x *= 0.8;
+                playerParts.legR.rotation.x *= 0.8;
+                if (!playerState.carryingPetId) {
+                    playerParts.armL.rotation.x *= 0.8;
+                    playerParts.armR.rotation.x *= 0.8;
+                }
+            }
+
+            if (playerState.carryingPetId) {
+                playerParts.armL.rotation.x = -1.2;
+                playerParts.armR.rotation.x = -1.2;
+            }
+
+            petEntities.forEach(pet => {
+                pet.bouncePhase += 0.09;
+                pet.bodyGroup.scale.lerp(new THREE.Vector3(pet.targetScale, pet.targetScale, pet.targetScale), 0.18);
+
+                // 優先狀態 1：正被滑鼠指標直接抓起懸在半空中！
+                if (mouseGrabState.activePet && mouseGrabState.activePet.id === pet.id) {
+                    pet.group.position.set(pet.x, 1.65 + Math.sin(pet.bouncePhase * 2) * 0.08, pet.z);
+                    pet.group.rotation.z = Math.sin(pet.bouncePhase * 2.5) * 0.16; // 在空中開心搖晃小腳腳
+                    return;
+                } else {
+                    pet.group.rotation.z *= 0.8;
+                }
+
+                // 優先狀態 2：正被玩家角色雙手抱在懷裡
+                if (pet.id === playerState.carryingPetId) {
+                    pet.x = playerState.x + Math.sin(playerGroup.rotation.y) * 0.55;
+                    pet.z = playerState.z + Math.cos(playerGroup.rotation.y) * 0.55;
+                    pet.group.position.set(pet.x, 1.35 + Math.sin(pet.bouncePhase) * 0.05, pet.z);
+                    pet.group.rotation.y = playerGroup.rotation.y;
+                    return;
+                }
+
+                if (fruitMeshes.length > 0) {
+                    const fruit = fruitMeshes[0];
+                    const fdx = fruit.x - pet.x;
+                    const fdz = fruit.z - pet.z;
+                    const fdist = Math.hypot(fdx, fdz);
+                    if (fdist < 0.55) {
+                        scene.remove(fruit.mesh);
+                        fruitMeshes.shift();
+                        spawn3DFloatingFX(new THREE.Vector3(pet.x, 1.5, pet.z), '💕');
+                        playChime('A5');
+                        addAffinity(6);
+                        const info = CREATURES_DATA.find(c => c.id === pet.id);
+                        updateStatusToast(`「${info.name}」開心地吃掉了星露果，親密度上升！`);
+                    } else {
+                        pet.x += (fdx / fdist) * 0.045;
+                        pet.z += (fdz / fdist) * 0.045;
+                        pet.group.rotation.y = Math.atan2(fdx, fdz);
+                        pet.group.position.set(pet.x, 0.26 + Math.abs(Math.sin(pet.bouncePhase)) * 0.15, pet.z);
+                        return;
+                    }
+                }
+
+                pet.timer--;
+                if (pet.timer <= 0) {
+                    pet.timer = 110 + Math.random() * 140;
+                    const ang = Math.random() * Math.PI * 2;
+                    pet.vx = Math.cos(ang) * 0.024;
+                    pet.vz = Math.sin(ang) * 0.024;
+                }
+
+                const nextPx = pet.x + pet.vx;
+                const nextPz = pet.z + pet.vz;
+                if (Math.hypot(nextPx, nextPz) < ISLAND_RADIUS - 0.6) {
+                    pet.x = nextPx;
+                    pet.z = nextPz;
+                } else {
+                    pet.vx *= -1;
+                    pet.vz *= -1;
+                }
+
+                pet.group.position.set(pet.x, 0.26 + Math.abs(Math.sin(pet.bouncePhase)) * 0.12, pet.z);
+                if (Math.hypot(pet.vx, pet.vz) > 0.001) {
+                    pet.group.rotation.y = Math.atan2(pet.vx, pet.vz);
+                }
+            });
+
+            // 若還在開場帷幕狀態，鏡頭緩慢環繞小島營造電影氛圍
+            if (!document.getElementById('intro-curtain').classList.contains('curtain-hidden')) {
+                camOrbit.targetTheta += 0.0025;
+            }
+
+            floatingClouds.forEach(c => {
+                c.userData.angle += c.userData.speed;
+                c.position.x = Math.cos(c.userData.angle) * c.userData.radius;
+                c.position.z = Math.sin(c.userData.angle) * c.userData.radius;
+            });
+
+            const now = Date.now() * 0.003;
+            floatingSparkles.forEach(sp => {
+                sp.position.y = sp.userData.baseY + Math.sin(now + sp.userData.phase) * 0.35;
+                sp.rotation.y += 0.03;
+            });
+
+            fruitMeshes.forEach(f => { f.mesh.rotation.y += 0.04; });
+
+            updateCameraPosition(false);
+        }
+
+        function animate3DLoop() {
+            requestAnimationFrame(animate3DLoop);
+            update3DWorld();
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            if (!renderer || !camera) return;
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.onload = function () {
+            populateEncyclopedia();
+            initThreeScene();
+            animate3DLoop();
+        };
+    </script>
+</body>
+</html>
